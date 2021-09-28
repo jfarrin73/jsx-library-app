@@ -46,7 +46,7 @@ export default function RegisterModal(props) {
                     type="button"
                     onClick={openModal}
                     className="px-4 py-2 text-sm font-medium bg-green-200 dark:bg-green-700 hover:bg-green-300 dark:hover:bg-green-600 text-black dark:text-white transition duration-500 ease-in-out rounded-md">
-                    Register
+                    Sign Up
                 </button>
             </div>
 
@@ -84,7 +84,7 @@ export default function RegisterModal(props) {
                                 <Dialog.Title
                                     as="h3"
                                     className="text-2xl font-medium text-green-700 dark:text-green-400 flex justify-center">
-                                    Register
+                                    Sign Up
                                 </Dialog.Title>
                                 <form
                                     onSubmit={handleSubmit}
@@ -95,7 +95,7 @@ export default function RegisterModal(props) {
                                         <input
                                             onChange={(e) => {setFirstName(e.target.value); setErrorMessage("");}}
                                             type="text" placeholder="First Name" name="firstName"
-                                            className="p-2 bg-gray-200 text-gray-400 dark:text-gray-300 dark:bg-gray-700 rounded-lg"/>
+                                            className="p-2 bg-gray-200 text-gray-400 dark:text-gray-300 dark:bg-gray-700 rounded-lg outline-none"/>
                                     </label>
                                     {/*LAST NAME*/}
                                     <label className="dark:text-white text-lg flex flex-col">
@@ -103,7 +103,7 @@ export default function RegisterModal(props) {
                                         <input
                                             onChange={(e) => {setLastName(e.target.value); setErrorMessage("");}}
                                             type="text" placeholder="Last Name" name="lastName"
-                                            className="p-2 bg-gray-200 text-gray-400 dark:text-gray-300 dark:bg-gray-700 rounded-lg"/>
+                                            className="p-2 bg-gray-200 text-gray-400 dark:text-gray-300 dark:bg-gray-700 rounded-lg outline-none"/>
                                     </label>
                                     {/*USERNAME*/}
                                     <label className="dark:text-white text-lg flex flex-col">
@@ -111,7 +111,7 @@ export default function RegisterModal(props) {
                                         <input
                                             onChange={(e) => {setUsername(e.target.value); setErrorMessage("");}}
                                             type="text" placeholder="Username" name="username"
-                                            className="p-2 bg-gray-200 text-gray-400 dark:text-gray-300 dark:bg-gray-700 rounded-lg"/>
+                                            className="p-2 bg-gray-200 text-gray-400 dark:text-gray-300 dark:bg-gray-700 rounded-lg outline-none"/>
                                     </label>
                                     {/*EMAIL*/}
                                     <div>
@@ -120,7 +120,7 @@ export default function RegisterModal(props) {
                                             <input
                                                 onChange={(e) => {setEmail(e.target.value); setErrorMessage("");}}
                                                 type="text" placeholder="Email" name="email"
-                                                className="p-2 bg-gray-200 text-gray-400 dark:text-gray-300 dark:bg-gray-700 rounded-lg"/>
+                                                className="p-2 bg-gray-200 text-gray-400 dark:text-gray-300 dark:bg-gray-700 rounded-lg outline-none"/>
                                         </label>
                                         {/*ERROR MESSAGE*/}
                                         <p className="text-red-500 pt-2 align-middle">{errorMessage}</p>

@@ -29,5 +29,7 @@ public class AuthenticationDeniedHandler implements AuthenticationEntryPoint {
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(response.getOutputStream(), httpResponse); //serialize httpResponse into response
+
+
     }
 }

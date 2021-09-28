@@ -89,7 +89,7 @@ export default function LoginModal(props) {
                                         <input
                                             onChange={(e) => {setUsername(e.target.value); setErrorMessage("");}}
                                             type="text" placeholder="Username" name="username"
-                                            className="p-2 bg-gray-200 text-gray-400 dark:text-gray-300 dark:bg-gray-700 rounded-lg"/>
+                                            className="p-2 bg-gray-200 text-gray-400 dark:text-gray-300 dark:bg-gray-700 rounded-lg outline-none"/>
                                     </label>
                                     {/*PASSWORD*/}
                                     <div>
@@ -98,7 +98,7 @@ export default function LoginModal(props) {
                                             <input
                                                 onChange={(e) => {setPassword(e.target.value); setErrorMessage("");}}
                                                 type="password" placeholder="Password" name="password"
-                                                className="p-2 bg-gray-200 text-gray-400 dark:text-gray-300 dark:bg-gray-700 rounded-lg"/>
+                                                className="p-2 bg-gray-200 text-gray-400 dark:text-gray-300 dark:bg-gray-700 rounded-lg outline-none"/>
                                         </label>
                                         {/*ERROR MESSAGE*/}
                                         <p className="text-red-500 pt-2 align-middle">{errorMessage}</p>

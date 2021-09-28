@@ -6,7 +6,7 @@ import TabbedView from "./components/TabbedView";
 // import Preview from "./components/Preview";
 // import JsxParser from "react-jsx-parser";
 import JsxRenderer from "./components/JsxRenderer";
-import NewEntryDialog from "./components/NewEntryDialog";
+import NewEntryModal from "./components/NewEntryModal";
 import DataService from "./service/DataService";
 import LoginModal from "./components/LoginModal";
 import RegisterModal from "./components/RegisterModal";
@@ -60,6 +60,9 @@ function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
+
+        setIsLoggedIn(localStorage.getItem("token") !== null);
+
         DataService.retrieveAllEntries().then(response => {
                 setData(response.data);
             }
@@ -72,12 +75,10 @@ function App() {
             setIsLoggedIn(true);
             const token = loginResponse.headers["jwt-token"];
             localStorage.setItem("token", JSON.stringify(token));
-
-            console.log("logged in and token saved");
+            localStorage.setItem("username", JSON.stringify(loginResponse.data.username));
         } catch (e){
             return Promise.reject(e.response.data);
         }
-
     }
 
     async function register(user){
@@ -95,52 +96,87 @@ function App() {
         }
     }
 
-    function refreshEntries(){
+    async function addNewEntry(newEntry){
+        await DataService.createEntry(newEntry); //.then(r => {
         DataService.retrieveAllEntries()
             .then(response => setData(response.data))
     }
 
     return (
-        <div className="w-full h-screen flex flex-col space-y-4 bg-gray-200 dark:bg-gray-900">
+        <div className="flex flex-col h-screen w-screen bg-gray-200 dark:bg-gray-900">
             <header className="w-full bg-white dark:bg-gray-800 flex justify-between items-center">
                 <h1 className="text-3xl p-4 dark:text-green-300">Library</h1>
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 px-4">
                     {isLoggedIn
-                        ? <NewEntryDialog addEntry={refreshEntries}/>
-                        : <div className="flex space-x-4"><RegisterModal register={register}/> <LoginModal login={login}/></div>}
+                        ? <NewEntryModal addEntry={addNewEntry}/>
+                        : <div className="flex space-x-2"><RegisterModal register={register}/> <LoginModal login={login}/></div>}
                     <ThemeButton isDarkTheme={true}/>
                 </div>
             </header>
 
-            <div className="flex-1 h-full flex flex-col space-y-4 items-center overflow-y-auto">
+            <div className="flex-1 overflow-y-auto space-x-4 flex justify-center items-start pt-4">
 
-                {data.map((entry) => <TabbedView entry={entry} key={entry.id}/>)}
-
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg w-1/2">
-                    <div className="flex justify-between items-start">
-                        <h2 className="text-gray-700 dark:text-gray-100 text-2xl mb-4">Component Editor</h2>
-                        <button
-                            className="bg-green-700 hover:bg-green-600 text-white py-2 px-4 rounded-lg">Save
-                        </button>
-                    </div>
-
-                    <JsxRenderer/>
-
+                <div className="flex flex-col bg-gray-800 p-0 rounded-lg divide-y divide-gray-900 divide-solid">
+                    <label className="py-2 px-4 pb-3 w-64 cursor-pointer text-xl dark:text-gray-300 dark:hover:text-green-300">
+                        Discover
+                        <input type="button"/>
+                    </label>
+                    <label className="py-2 px-4 pb-3 w-64 cursor-pointer text-xl dark:text-gray-300 dark:hover:text-green-300">
+                        Favorites
+                        <input type="button"/>
+                    </label>
+                    <label className="py-2 px-4 pb-3 w-64 cursor-pointer text-xl dark:text-gray-300 dark:hover:text-green-300">
+                        My Components
+                        <input type="button"/>
+                    </label>
+                    <label className="py-2 px-4 pb-3 w-64 cursor-pointer text-xl dark:text-gray-300 dark:hover:text-green-300">
+                        Buttons
+                        <input type="button"/>
+                    </label>
+                    <label className="py-2 px-4 pb-3 w-64 cursor-pointer text-xl dark:text-gray-300 dark:hover:text-green-300">
+                        Inputs
+                        <input type="button"/>
+                    </label>
+                    <label className="py-2 px-4 pb-3 w-64 cursor-pointer text-xl dark:text-gray-300 dark:hover:text-green-300">
+                        Other
+                        <input type="button"/>
+                    </label>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg w-1/2">
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <h2 className="text-gray-700 dark:text-gray-100 text-2xl">Theme Button</h2>
-                            <p className="dark:text-gray-400">This is a complete component of a button to toggle between light and dark theme using Tailwind css</p>
+                <div className="w-1/2 flex flex-col space-y-4 items-center">
+                    {data.map((entry) => <TabbedView entry={entry} key={entry.id}/>)}
+
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg w-full">
+                        <div className="flex justify-between items-start">
+                            <h2 className="text-gray-700 dark:text-gray-100 text-2xl mb-4">Component Editor</h2>
+                            <button
+                                className="bg-green-700 hover:bg-green-600 text-white py-2 px-4 rounded-lg">Save
+                            </button>
                         </div>
-                        <button className="border border-green-500 font-bold text-green-500 py-2 px-4 my-2 rounded-lg">Copy</button>
+
+                        <JsxRenderer/>
+
                     </div>
 
-                    <div>
-                        <CodeBlockComponent codeString={codeSnippetLong}/>
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg w-full">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h2 className="text-gray-700 dark:text-gray-100 text-2xl">Theme Button</h2>
+                                <p className="dark:text-gray-400">This is a complete component of a button to toggle between light and dark theme using Tailwind css</p>
+                            </div>
+                            <button className="border border-green-500 font-bold text-green-500 py-2 px-4 my-2 rounded-lg">Copy</button>
+                        </div>
+
+                        <div>
+                            <CodeBlockComponent codeString={codeSnippetLong}/>
+                        </div>
                     </div>
                 </div>
+
+
+                {/*SPACER TO KEEP EVERYTHING ELSE CENTERED*/}
+                {/*<div className="opacity-0 w-64"/>*/}
+
             </div>
         </div>
     );

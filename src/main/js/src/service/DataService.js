@@ -1,16 +1,19 @@
 import axios from 'axios'
 
-// axios.defaults.baseURL = "http://localhost:8081";
-// const BASE_URL = "http://localhost:8081/";
-
 const ENTRIES = `entries/public`
 const USER = `user`
 
 const getToken = () => {
     if (localStorage.getItem("token") !== null) {
-        let token = JSON.parse(localStorage.getItem("token"));
-        console.log("token: " + token)
-        return token;
+        return JSON.parse(localStorage.getItem("token"));
+    }
+
+    return "";
+}
+
+const getCurrentUser = () => {
+    if (localStorage.getItem("username") !== null) {
+        return JSON.parse(localStorage.getItem("username"));
     }
 
     return "";
@@ -19,26 +22,23 @@ const getToken = () => {
 class DataService {
 
     retrieveAllEntries(name) {
-        //console.log('executed service')
         return axios.get(ENTRIES);
     }
 
     retrieveEntry(id) {
-        //console.log('executed service')
         return axios.get(ENTRIES + `/${id}`);
     }
 
     deleteEntry(id) {
-        //console.log('executed service')
         return axios.delete(ENTRIES + `/${id}`);
     }
 
     updateEntry(entry) {
-        //console.log('executed service')
         return axios.put(ENTRIES + `/${entry.id}`, entry);
     }
 
     async createEntry(entry) {
+        entry.createdBy = getCurrentUser();
         return await axios.post(ENTRIES + `/create`, entry, {headers: {Authorization: `Bearer ${getToken()}`}});
     }
 

@@ -2,9 +2,8 @@ import React from "react";
 import {Dialog, Transition} from '@headlessui/react'
 import {Fragment, useState} from 'react'
 import JsxRenderer from "./JsxRenderer";
-import DataService from "../service/DataService";
 
-export default function NewEntryDialog(props) {
+export default function NewEntryModal(props) {
     let [isOpen, setIsOpen] = useState(false);
 
     let [code, setCode] = useState("<div>My Component</div>");
@@ -19,11 +18,8 @@ export default function NewEntryDialog(props) {
 
     async function handleSubmit(event) {
         event.preventDefault();
-        console.log(newEntry);
         setIsOpen(false);
-        await DataService.createEntry(newEntry); //.then(r => {
-        console.log("Entry Sent");
-        props.addEntry();
+        props.addEntry(newEntry);
         // });
     }
 

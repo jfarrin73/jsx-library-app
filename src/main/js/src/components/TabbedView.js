@@ -13,7 +13,7 @@ function classNames(...classes) {
 export default function TabbedView(props) {
 
     return (
-        <div className="w-1/2 py-2 px-4 bg-white dark:bg-gray-800 rounded-xl">
+        <div className="w-full py-2 px-4 bg-white dark:bg-gray-800 rounded-xl">
             <Tab.Group>
                 <div>
                     <div className="flex justify-between items-center">
@@ -59,7 +59,7 @@ export default function TabbedView(props) {
             <div className="flex justify-end">
                 <button
                     onClick={() => alert("Someday this might should you more components by this user")}
-                    className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-1 rounded-md">User123</button>
+                    className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 pb-0.5 rounded-md">{props.entry.createdBy}</button>
             </div>
 
         </div>

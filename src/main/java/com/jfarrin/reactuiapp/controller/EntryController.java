@@ -32,7 +32,7 @@ public class EntryController {
     }
 
     @PostMapping("/create")
-//    @PreAuthorize("hasAnyAuthority('user:create')")
+    @PreAuthorize("hasAnyAuthority('user:create')")
     public ResponseEntity<Entry> createEntry(@RequestBody Entry entry){
         return new ResponseEntity<>(this.repository.save(entry),HttpStatus.CREATED);
     }

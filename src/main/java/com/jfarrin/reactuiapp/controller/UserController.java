@@ -23,15 +23,15 @@ import static org.springframework.http.HttpStatus.OK;
 
 @RestController
 @RequestMapping(path = {"/","/user"})
-public class UserResource extends ExceptionHandling {
+public class UserController extends ExceptionHandling {
     public static final String AN_EMAIL_WITH_A_NEW_PASSWORD_WAS_SENT_TO = "An email with a new password was sent to :";
     public static final String USER_DELETED_SUCCESSFULLY = "User deleted successfully";
-    private AuthenticationManager authenticationManager;
-    private UserService userService;
-    private JwtTokenProvider jwtTokenProvider;
+    private final AuthenticationManager authenticationManager;
+    private final UserService userService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Autowired
-    public UserResource(AuthenticationManager authenticationManager, UserService userService, JwtTokenProvider jwtTokenProvider) {
+    public UserController(AuthenticationManager authenticationManager, UserService userService, JwtTokenProvider jwtTokenProvider) {
         this.authenticationManager = authenticationManager;
         this.userService = userService;
         this.jwtTokenProvider = jwtTokenProvider;
