@@ -3,26 +3,35 @@ import axios from 'axios'
 const ENTRIES = `entries/public`
 const USER = `user`
 
+const USERNAME = "username";
+const TOKEN = "token";
+const EMPTY = "";
+
 const getToken = () => {
-    if (localStorage.getItem("token") !== null) {
-        return JSON.parse(localStorage.getItem("token"));
+    if (localStorage.getItem(TOKEN) !== null) {
+        return JSON.parse(localStorage.getItem(TOKEN));
     }
 
     return "";
 }
 
-const getCurrentUser = () => {
-    if (localStorage.getItem("username") !== null) {
-        return JSON.parse(localStorage.getItem("username"));
-    }
-
-    return "";
-}
+// const getCurrentUser = () => {
+//     if (localStorage.getItem(USERNAME) !== null) {
+//         console.log(JSON.parse(localStorage.getItem(USERNAME)));
+//         return JSON.parse(localStorage.getItem(USERNAME));
+//     }
+//
+//     return "";
+// }
 
 class DataService {
 
-    retrieveAllEntries(name) {
-        return axios.get(ENTRIES);
+    retrieveAllEntries(category, byUsername) {
+        if (byUsername){
+            return axios.get(ENTRIES + `/user`, {headers: {Authorization: `Bearer ${getToken()}`}});
+        }
+
+        return axios.get(ENTRIES + `?category=${category}`);
     }
 
     retrieveEntry(id) {
@@ -38,8 +47,12 @@ class DataService {
     }
 
     async createEntry(entry) {
-        entry.createdBy = getCurrentUser();
+        // entry.createdBy = this.currentUser;
         return await axios.post(ENTRIES + `/create`, entry, {headers: {Authorization: `Bearer ${getToken()}`}});
+    }
+
+    async getCurrentUserName(){
+        return await axios.get(USER + `/current`,{headers: {Authorization: `Bearer ${getToken()}`}})
     }
 
     async login(user) {
@@ -48,6 +61,17 @@ class DataService {
 
     async register(user) {
         return await axios.post(USER + `/register`, user);
+    }
+
+    ClearStorage(){
+        if (localStorage.getItem(TOKEN) !== null) {
+            localStorage.setItem(TOKEN, EMPTY);
+            return localStorage.removeItem(TOKEN);
+        }
+        if (localStorage.getItem(USERNAME) !== null) {
+            localStorage.setItem(USERNAME, EMPTY);
+            return localStorage.removeItem(USERNAME);
+        }
     }
 }
 

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 import static com.jfarrin.reactuiapp.constant.SecurityConstant.JWT_TOKEN_HEADER;
+import static com.jfarrin.reactuiapp.constant.SecurityConstant.TOKEN_PREFIX;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 
@@ -77,10 +78,16 @@ public class UserController extends ExceptionHandling {
         return new ResponseEntity<>(updatedUser,OK);
     }
 
-    @GetMapping("/find/{username}")
+    @GetMapping("/{username}")
     public ResponseEntity<User> getUser(@PathVariable("username") String username){
         User user = userService.findUserByUsername(username);
         return new ResponseEntity<>(user,OK);
+    }
+
+    @GetMapping("/current")
+    @PreAuthorize("hasAnyAuthority('user:read')")
+    public ResponseEntity<String> getCurrentUserName(@RequestHeader String authorization){
+        return new ResponseEntity<>(jwtTokenProvider.getSubject(authorization.substring(TOKEN_PREFIX.length())),OK);
     }
 
     @GetMapping("/list")

@@ -8,12 +8,10 @@ function classNames(...classes) {
     return classes.filter(Boolean).join(' ')
 }
 
-// const codeSnippetShort = '<button\n\tclassName="bg-blue-700 hover:bg-blue-600 text-white py-2 px-4 rounded-lg">\n\tMy Button\n</button>';
-
 export default function TabbedView(props) {
 
     return (
-        <div className="w-full py-2 px-4 bg-white dark:bg-gray-800 rounded-xl">
+        <div className="w-full py-2 px-4 bg-white dark:bg-gray-800 rounded-xl shadow-md">
             <Tab.Group>
                 <div>
                     <div className="flex justify-between items-center">
@@ -25,9 +23,9 @@ export default function TabbedView(props) {
                                     <Tab
                                         key={label}
                                         className={({ selected }) =>
-                                            classNames('text-white py-2 px-4 my-2 rounded-lg',
+                                            classNames('text-white py-2 px-4 my-2 rounded-lg transition ease-in-out duration-500',
                                                 selected
-                                                    ? 'bg-green-700 hover:bg-green-700 bg-opacity-100 hover:bg-opacity-100'
+                                                    ? 'bg-green-700 hover:bg-green-600  bg-opacity-100 hover:bg-opacity-100 '
                                                     : 'bg-black dark:bg-white bg-opacity-50 hover:bg-opacity-70 dark:bg-opacity-10 dark:hover:bg-opacity-30'
                                             )
                                         }
@@ -36,7 +34,7 @@ export default function TabbedView(props) {
                                     </Tab>
                                 ))}
                             </Tab.List>
-                            <button className="border border-green-500 font-bold text-green-500 py-1.5 px-4 my-2.5 rounded-lg">Copy</button>
+                            <button className="border border-green-700 font-bold text-green-700 dark:text-green-500 dark:border-green-500 py-1.5 px-4 my-2.5 rounded-lg">Copy</button>
                         </div>
 
                     </div>
@@ -56,7 +54,9 @@ export default function TabbedView(props) {
                 </Tab.Panels>
             </Tab.Group>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end space-x-1">
+                <button
+                    className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 pb-0.5 rounded-md">{props.entry.category}</button>
                 <button
                     onClick={() => alert("Someday this might should you more components by this user")}
                     className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 pb-0.5 rounded-md">{props.entry.createdBy}</button>

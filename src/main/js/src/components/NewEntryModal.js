@@ -2,25 +2,28 @@ import React from "react";
 import {Dialog, Transition} from '@headlessui/react'
 import {Fragment, useState} from 'react'
 import JsxRenderer from "./JsxRenderer";
+import CategoryPicker from "./CategoryPicker";
 
-export default function NewEntryModal(props) {
+export default function NewEntryModal({addEntry}) {
     let [isOpen, setIsOpen] = useState(false);
 
     let [code, setCode] = useState("<div>My Component</div>");
     let [description, setDescription] = useState("component description");
     let [title, setTitle] = useState("My Component");
+    let [category, setCategory] = useState("Element");
 
     let newEntry = {
         "title": title,
         "description": description,
-        "code": code
+        "code": code,
+        "created": "",
+        category: category
     }
 
     async function handleSubmit(event) {
         event.preventDefault();
         setIsOpen(false);
-        props.addEntry(newEntry);
-        // });
+        addEntry(newEntry);
     }
 
     return (
@@ -29,7 +32,7 @@ export default function NewEntryModal(props) {
                 <button
                     type="button"
                     onClick={() => setIsOpen(true)}
-                    className="px-4 py-2 my-3 rounded-lg bg-gradient-to-r from-green-400 to-purple-400 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md"
+                    className="px-4 py-2 my-3 rounded-lg bg-gradient-to-r from-green-400 to-green-700 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md"
                 >
                     Add
                 </button>
@@ -77,11 +80,13 @@ export default function NewEntryModal(props) {
                                             </label>
                                         </div>
 
-                                        <input
-                                            type="text" placeholder="Title"
-                                            onChange={(e) => setTitle(e.target.value)}
-                                            className="outline-none rounded-lg p-2 text-xl bg-gray-900 dark:text-white placeholder-gray-400 w-1/2"/>
-
+                                        <div className="flex space-x-4">
+                                            <input
+                                                type="text" placeholder="Title"
+                                                onChange={(e) => setTitle(e.target.value)}
+                                                className="outline-none rounded-lg p-2 text-xl bg-gray-900 dark:text-white placeholder-gray-400 w-1/2"/>
+                                            <CategoryPicker onSelectionChanged={c => setCategory(c)}/>
+                                        </div>
                                         <input
                                             type="text" placeholder="Description"
                                             onChange={(e) => setDescription(e.target.value)}
