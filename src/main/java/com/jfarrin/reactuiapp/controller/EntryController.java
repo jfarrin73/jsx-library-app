@@ -55,11 +55,27 @@ public class EntryController {
         return new ResponseEntity<>(this.repository.save(entry),HttpStatus.CREATED);
     }
 
+    @PatchMapping("/find/{id}")
+    @PreAuthorize("hasAnyAuthority('user:create')")
+    public ResponseEntity<Entry> updateEntryById(@RequestHeader String authorization, @PathVariable Long id, @RequestBody Entry newEntry){
+        if (getCurrentUserName(authorization).equals(newEntry.getCreatedBy())) {
+            Optional<Entry> optional = this.repository.findById(id);
+            optional.ifPresent(entry -> this.repository.save(entry.UpdateEntry(newEntry)));
+            return new ResponseEntity<>(optional.orElse(null),HttpStatus.OK);
+        }
+        // User is somehow trying to patch an entry not created by them
+        return new ResponseEntity<>(null,HttpStatus.OK);
+    }
+
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('user:delete')")
-    public ResponseEntity<String> deleteEntryById(@PathVariable Long id){
-        this.repository.deleteById(id);
-        return new ResponseEntity<>("Id: " + id + " has been deleted",HttpStatus.OK);
+    @PreAuthorize("hasAnyAuthority('user:create')")
+    public ResponseEntity<String> deleteEntryById(@RequestHeader String authorization, @PathVariable Long id){
+        if (getCurrentUserName(authorization).equals(this.repository.findById(id).get().getCreatedBy())){
+            this.repository.deleteById(id);
+            return new ResponseEntity<>("Id: " + id + " has been deleted",HttpStatus.OK);
+        }
+
+        return new ResponseEntity<>("Unauthorized", HttpStatus.OK);
     }
 
     private String getCurrentUserName(String authorization){

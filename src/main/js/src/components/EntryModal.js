@@ -1,49 +1,37 @@
-import React from "react";
+import React, {useEffect} from "react";
 import {Dialog, Transition} from '@headlessui/react'
 import {Fragment, useState} from 'react'
 import JsxRenderer from "./JsxRenderer";
 import CategoryPicker from "./CategoryPicker";
 
-export default function NewEntryModal({addEntry,entryToEdit}) {
-    let [isOpen, setIsOpen] = useState(false);
-    let [code, setCode] = useState("<div>My Component</div>");
-    let [description, setDescription] = useState("component description");
-    let [title, setTitle] = useState("My Component");
-    let [category, setCategory] = useState("Element");
+export default function EntryModal({isOpen,setIsOpen,entry,saveHandler}) {
+    let [code, setCode] = useState("");
+    let [description, setDescription] = useState("");
+    let [title, setTitle] = useState("");
+    let [category, setCategory] = useState("");
 
-    let newEntry = {
-        "title": title,
-        "description": description,
-        "code": code,
-        "created": "",
-        "category": category
-    }
-
-    // useEffect(() => {
-    //    if (entryToEdit !== null){
-    //        setTitle(entryToEdit.title);
-    //        setDescription(entryToEdit.description);
-    //        setCode(entryToEdit.code);
-    //    }
-    // });
+    useEffect(() => {
+        if (isOpen){
+            console.log("entry passed to EntryModal: " + entry.title);
+            setTitle(entry.title);
+            setDescription(entry.description);
+            setCode(entry.code);
+            setCategory(entry.category);
+        }
+    },[isOpen]);
 
     async function handleSubmit(event) {
         event.preventDefault();
         setIsOpen(false);
-        addEntry(newEntry);
+        entry.description = description;
+        entry.title = title;
+        entry.code = code;
+        entry.category = category;
+        saveHandler(entry);
     }
 
     return (
         <div>
-            <div className="flex items-center justify-center">
-                <button
-                    type="button"
-                    onClick={() => setIsOpen(true)}
-                    className="px-4 py-2 my-3 rounded-lg bg-gradient-to-r from-green-400 to-green-700 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md">
-                    Add
-                </button>
-            </div>
-
             <Transition appear show={isOpen} as={Fragment}>
                 <Dialog
                     as="div"
@@ -71,9 +59,7 @@ export default function NewEntryModal({addEntry,entryToEdit}) {
                             leaveTo="opacity-0 scale-95">
                             <div
                                 className="inline-block w-1/2 p-6 mt-8 overflow-hidden text-left align-top transition-all transform bg-gray-100 dark:bg-gray-800 shadow-xl rounded-2xl">
-                                <div className="">
-
-                                    <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
+                                    <div className="flex flex-col space-y-4">
                                         <div className="flex justify-between items-center">
                                             <Dialog.Title
                                                 as="h3"
@@ -81,26 +67,27 @@ export default function NewEntryModal({addEntry,entryToEdit}) {
                                                 New Component
                                             </Dialog.Title>
                                             <label>
-                                                <input type="submit" value="Save"
-                                                       className="bg-green-700 hover:bg-green-600 text-white py-2 px-4 rounded-lg shadow-md"/>
+                                                <input
+                                                    type="button" value="Save"
+                                                    onClick={handleSubmit}
+                                                   className="bg-green-700 hover:bg-green-600 text-white py-2 px-4 rounded-lg shadow-md cursor-pointer transition ease-in-out duration-500"/>
                                             </label>
                                         </div>
 
                                         <div className="flex space-x-4">
                                             <input
-                                                type="text" placeholder="Title"
+                                                type="text" placeholder="Title" value={title}
                                                 onChange={(e) => setTitle(e.target.value)}
                                                 className="outline-none rounded-lg shadow-md p-2 text-xl bg-white dark:bg-gray-900 dark:text-white placeholder-gray-400 w-1/2"/>
-                                            <CategoryPicker onSelectionChanged={c => setCategory(c)}/>
+                                            <CategoryPicker initialValue={{name:category}} onSelectionChanged={c => setCategory(c)}/>
                                         </div>
                                         <input
-                                            type="text" placeholder="Description"
+                                            type="text" placeholder="Description" value={description}
                                             onChange={(e) => setDescription(e.target.value)}
                                             className="outline-none rounded-lg shadow-md p-2 bg-white dark:bg-gray-900 dark:text-white placeholder-gray-400"/>
 
-                                        <JsxRenderer onChange={(e => setCode(e.target.value))}/>
-                                    </form>
-                                </div>
+                                        <JsxRenderer onChange={(e => setCode(e.target.value))} code={code}/>
+                                    </div>
                             </div>
                         </Transition.Child>
                     </div>

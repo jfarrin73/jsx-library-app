@@ -21,4 +21,13 @@ public class Entry {
     private boolean isPrivate;
     private String createdBy;
     private String category;
+
+    public Entry UpdateEntry(Entry newEntry){
+        title = newEntry.title;
+        description = newEntry.description;
+        code = newEntry.code;
+        isPrivate = newEntry.isPrivate;
+        category = newEntry.category;
+        return newEntry;
+    }
 }

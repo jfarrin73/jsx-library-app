@@ -1,47 +1,18 @@
 import React, {useEffect, useState} from 'react';
 import './App.css';
 import ThemeButton from "./components/ThemeButton";
-import CodeBlockComponent from "./components/CodeBlockComponent";
 import TabbedView from "./components/TabbedView";
-// import Preview from "./components/Preview";
-// import JsxParser from "react-jsx-parser";
-import JsxRenderer from "./components/JsxRenderer";
-import NewEntryModal from "./components/NewEntryModal";
 import DataService from "./service/DataService";
 import LoginModal from "./components/LoginModal";
 import RegisterModal from "./components/RegisterModal";
 import Sidebar from "./components/Sidebar";
-
-// const codeSnippetShort = '<button className="bg-blue-700 hover:bg-blue-600 text-white py-2 px-4 rounded-lg">My Button</button>';
-// const codeSnippetShort2 = '<button className="bg-green-700 hover:bg-blue-600 text-white py-2 px-4 rounded-lg">My Button</button>';
-
-// const data =
-//     [{
-//         "id": 1,
-//         "title": "My Icon Button",
-//         "description": "This is my icon button",
-//         "code": codeSnippetShort
-//     },
-//     {
-//         "id": 2,
-//         "title": "My Button",
-//         "description": "This is my button",
-//         "code": codeSnippetShort2
-//     }]
+import EditEntry from "./components/EditEntry";
+import NewEntry from "./components/NewEntry";
+import { HiOutlineSearch,HiX } from "react-icons/hi";
+import Fuse from 'fuse.js'
 
 const DISCOVER = "Discover";
 const MY_COMPONENTS = "My Components";
-
-const options = [
-    { name: "Discover" },
-    { name: 'Element' },
-    { name: 'Form' },
-    { name: 'Commerce' },
-    { name: 'Navigation' },
-    { name: 'Section' },
-    { name: 'List' },
-    { name: MY_COMPONENTS }
-]
 
 const defaultOptions = [
     { name: "Discover" },
@@ -53,38 +24,45 @@ const defaultOptions = [
     { name: 'List' },
 ]
 
+const EMPTY_ENTRY = {
+    "title": "",
+    "description":"",
+    "code":"",
+    "id":"",
+    "createdBy":"",
+    "created":"",
+    "category":""
+}
 
-// const codeSnippetLong = 'import React, {useState} from \'react\';\n' +
-//     'import { FaMoon } from "react-icons/fa";\n' +
-//     'import { FaSun } from "react-icons/fa";\n' +
-//     '\n' +
-//     'export default function ThemeButton(){\n' +
-//     '\n' +
-//     '    const [isDark, setDarkTheme] = useState(true);\n' +
-//     '\n' +
-//     '    return (\n' +
-//     '        <button className="group bg-gray-700 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md px-2 my-3 mx-4 group flex justify-center items-center w-12" onClick={() => {\n' +
-//     '            if (document.documentElement.classList.contains(\'dark\')){\n' +
-//     '                document.documentElement.classList.remove(\'dark\')\n' +
-//     '                setDarkTheme(false);\n' +
-//     '            } else {\n' +
-//     '                document.documentElement.classList.add(\'dark\')\n' +
-//     '                setDarkTheme(true);\n' +
-//     '            }\n' +
-//     '        }}>\n' +
-//     '            <div className="text-gray-300 group-hover:text-white text-2xl">\n' +
-//     '                {(isDark) ? <FaMoon/> : <FaSun/>}\n' +
-//     '            </div>\n' +
-//     '\n' +
-//     '        </button>\n' +
-//     '    )\n' +
-//     '}';
+const searchOptions = {
+    isCaseSensitive: false,
+    includeScore: false,
+    shouldSort: true,
+    includeMatches: false,
+    findAllMatches: false,
+    // minMatchCharLength: 1,
+    // location: 0,
+    // threshold: 0.6,
+    // distance: 100,
+    // useExtendedSearch: false,
+    // ignoreLocation: false,
+    // ignoreFieldNorm: false,
+    keys: [
+        "title",
+        "category"
+    ]
+};
 
 function App() {
 
     const [data, setData] = useState([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     let [selectedView, setSelectedView] = useState("");
+    const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
+    const [isEditEntryModalOpen, setIsEditEntryModalOpen] = useState(false);
+    const [activeEntry, setActiveEntry] = useState(EMPTY_ENTRY)
+    const [options, setOptions] = useState(defaultOptions);
+    const [searchText, setSearchText] = useState("");
 
     const NO_USER_COMPONENTS_MESSAGE = "You have not created any components";
     const NO_COMPONENTS_MESSAGE = "No components have been added yet";
@@ -94,27 +72,41 @@ function App() {
         DataService.getCurrentUserName().then(r =>{
             if (r.status === 200){
                 setIsLoggedIn(true);
+                loginActions();
             }
         });
     },[]);
 
     useEffect(() => loadData("Discover"),[]);
 
+    let fuse = new Fuse(data,searchOptions);
+
     async function login(user){
         try{
             const loginResponse = await DataService.login(user);
+            console.log("User Login")
             setIsLoggedIn(true);
             const token = loginResponse.headers["jwt-token"];
             localStorage.setItem("token", JSON.stringify(token));
-            localStorage.setItem("username", JSON.stringify(loginResponse.data.username));
+            loginActions();
         } catch (e){
             return Promise.reject(e.response.data);
+        }
+    }
+
+    function loginActions(){
+        console.log("Login Actions");
+        if (options[options.length - 1].name !== MY_COMPONENTS){
+            options.push({name: MY_COMPONENTS})
+            setOptions(options);
         }
     }
 
     function logout(){
         DataService.ClearStorage();
         setIsLoggedIn(false);
+        options.pop();
+        setOptions(options);
     }
 
     async function register(user){
@@ -123,18 +115,31 @@ function App() {
             const registerResponse = await DataService.register(user);
             let tempPassword = registerResponse.data;
             alert("Your temporary password is: " + tempPassword);
-            tempPassword = "";
-            // setIsLoggedIn(true);
-            // const token = loginResponse.headers["jwt-token"];
-            // localStorage.setItem("token", JSON.stringify(token));
         } catch (e){
             return Promise.reject(e.response.data);
         }
     }
 
     async function addNewEntry(newEntry){
-        await DataService.createEntry(newEntry); //.then(r => {
+        console.log("New Entry Added");
+        await DataService.createEntry(newEntry);
         loadData(selectedView);
+    }
+
+    function editEntry(entry){
+        console.log("entry title to edit: " + entry.title);
+        setActiveEntry(entry);
+        setIsEditEntryModalOpen(true);
+    }
+
+    async function updateEntry(entry){
+        await DataService.updateEntry(entry);
+        setActiveEntry(EMPTY_ENTRY);
+    }
+
+    async function deleteEntry(entryId){
+        setData(data.filter(x => x.id !== entryId));
+        await DataService.deleteEntry(entryId);
     }
 
     function sidebarSelected(selection){
@@ -143,7 +148,7 @@ function App() {
         loadData(selection);
     }
 
-    function loadData(selection){
+    function loadData(selection) {
         console.log("Load Data");
         if (selection === DISCOVER) {
             DataService.retrieveAllEntries("", false).then(response => setData(response.data));
@@ -151,6 +156,21 @@ function App() {
             DataService.retrieveAllEntries("", true).then(response => setData(response.data));
         } else {
             DataService.retrieveAllEntries(selection, false).then(response => setData(response.data));
+        }
+    }
+
+    function searchTextChange(event){
+        event.preventDefault();
+        setSearchText(event.target.value)
+
+        console.log(fuse.search(event.target.value));
+
+
+
+        if (event.target.value === ""){
+            loadData(selectedView);
+        }else{
+            setData(fuse.search(event.target.value).map(a => a.item));
         }
     }
 
@@ -164,19 +184,43 @@ function App() {
         return NO_VIEW_COMPONENTS_MESSAGE;
     }
 
-
     return (
         <div className="flex flex-col h-screen w-screen bg-gray-200 dark:bg-gray-900">
-            <header className="w-full bg-white dark:bg-gray-800 flex justify-between items-center shadow-md z-9">
+            <header className="w-full bg-white dark:bg-gray-800 flex justify-between items-center shadow-md z-50">
                 <h1 className="text-3xl p-4 text-green-700 dark:text-green-300">React JSX Library</h1>
+
+                <div className="flex bg-gray-900 items-center rounded-full w-96">
+                    <HiOutlineSearch className="text-gray-400 text-xl ml-3 w-6"/>
+                    <input
+                        type="text" placeholder="Search..." value={searchText}
+                        onChange={searchTextChange}
+                        className="px-4 py-2 text-xl text-black dark:text-white w-full bg-transparent outline-none"/>
+
+                    <div className="w-10">
+                        {searchText !== "" &&<button
+                            onClick={() => setSearchText("")}
+                            className={"hover:bg-gray-800 text-gray-400 text-xl p-2 mr-1 rounded-full"}>
+                             <HiX />
+                        </button>}
+                    </div>
+
+                </div>
+
+
+
                 <div className="flex items-center space-x-2 px-4">
                     {isLoggedIn
                         ? <div className="flex space-x-2">
-                            <NewEntryModal addEntry={addNewEntry}/>
+                            <button
+                                type="button"
+                                onClick={() => setIsEntryModalOpen(true)}
+                                className="px-4 py-2 my-3 rounded-lg bg-gradient-to-r from-green-400 to-green-700 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md">
+                                Add
+                            </button>
                             <button
                                 type="button"
                                 onClick={logout}
-                                className="px-4 py-2 my-3 text-sm font-medium bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-black dark:text-white transition duration-500 ease-in-out rounded-md">
+                                className="px-4 py-2 my-3 text-sm font-medium bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-black dark:text-white transition duration-500 ease-in-out rounded-md shadow-md">
                                 Log Out
                             </button>
                         </div>
@@ -187,47 +231,50 @@ function App() {
 
             <div className="flex-1 overflow-y-auto space-x-4 flex justify-center items-start pt-4">
 
-                <Sidebar options={isLoggedIn ? options : defaultOptions} onSelectionChange={sidebarSelected}/>
+                <Sidebar options={options} onSelectionChange={sidebarSelected}/>
 
                 <div className="w-1/2 flex flex-col space-y-4 items-center">
                     {data.length === 0
-                        ? <h2 className="text-2xl dark:text-gray-200 pt-7">No components yet</h2>
-                        : data.map((entry) => <TabbedView entry={entry} key={entry.id}/>)}
-
-                    {/*<div className="bg-white dark:bg-gray-800 p-4 rounded-lg w-full">*/}
-                    {/*    <div className="flex justify-between items-start">*/}
-                    {/*        <h2 className="text-gray-700 dark:text-gray-100 text-2xl mb-4">Component Editor</h2>*/}
-                    {/*        <button*/}
-                    {/*            className="bg-green-700 hover:bg-green-600 text-white py-2 px-4 rounded-lg">Save*/}
-                    {/*        </button>*/}
-                    {/*    </div>*/}
-
-                    {/*    <JsxRenderer/>*/}
-
-                    {/*</div>*/}
-
-                    {/*<div className="bg-white dark:bg-gray-800 p-4 rounded-lg w-full">*/}
-                    {/*    <div className="flex justify-between items-start mb-4">*/}
-                    {/*        <div>*/}
-                    {/*            <h2 className="text-gray-700 dark:text-gray-100 text-2xl">Theme Button</h2>*/}
-                    {/*            <p className="dark:text-gray-400">This is a complete component of a button to toggle between light and dark theme using Tailwind css</p>*/}
-                    {/*        </div>*/}
-                    {/*        <button className="border border-green-500 font-bold text-green-500 py-2 px-4 my-2 rounded-lg">Copy</button>*/}
-                    {/*    </div>*/}
-
-                    {/*    <div>*/}
-                    {/*        <CodeBlockComponent codeString={codeSnippetLong}/>*/}
-                    {/*    </div>*/}
-                    {/*</div>*/}
+                        ? <h2 className="text-2xl dark:text-gray-200 pt-7">{getEmptyMessage()}</h2>
+                        : data.map((entry) => <TabbedView entry={entry} allowEdit={selectedView === MY_COMPONENTS} editEntry={editEntry} key={entry.id} deleteEntry={deleteEntry}/>)}
                 </div>
-
 
                 {/*SPACER TO KEEP EVERYTHING ELSE CENTERED*/}
                 {/*<div className="opacity-0 w-64"/>*/}
 
             </div>
+
+            <NewEntry isOpen={isEntryModalOpen} setIsOpen={setIsEntryModalOpen} addEntry={addNewEntry}/>
+            <EditEntry isOpen={isEditEntryModalOpen} setIsOpen={setIsEditEntryModalOpen} entryToEdit={activeEntry} updateEntry={updateEntry}/>
         </div>
     );
 }
 
 export default App;
+
+
+{/*<div className="bg-white dark:bg-gray-800 p-4 rounded-lg w-full">*/}
+{/*    <div className="flex justify-between items-start">*/}
+{/*        <h2 className="text-gray-700 dark:text-gray-100 text-2xl mb-4">Component Editor</h2>*/}
+{/*        <button*/}
+{/*            className="bg-green-700 hover:bg-green-600 text-white py-2 px-4 rounded-lg">Save*/}
+{/*        </button>*/}
+{/*    </div>*/}
+
+{/*    <JsxRenderer/>*/}
+
+{/*</div>*/}
+
+{/*<div className="bg-white dark:bg-gray-800 p-4 rounded-lg w-full">*/}
+{/*    <div className="flex justify-between items-start mb-4">*/}
+{/*        <div>*/}
+{/*            <h2 className="text-gray-700 dark:text-gray-100 text-2xl">Theme Button</h2>*/}
+{/*            <p className="dark:text-gray-400">This is a complete component of a button to toggle between light and dark theme using Tailwind css</p>*/}
+{/*        </div>*/}
+{/*        <button className="border border-green-500 font-bold text-green-500 py-2 px-4 my-2 rounded-lg">Copy</button>*/}
+{/*    </div>*/}
+
+{/*    <div>*/}
+{/*        <CodeBlockComponent codeString={codeSnippetLong}/>*/}
+{/*    </div>*/}
+{/*</div>*/}

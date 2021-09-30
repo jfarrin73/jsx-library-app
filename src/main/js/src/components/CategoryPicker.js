@@ -1,19 +1,20 @@
-import {Fragment, useState} from 'react'
+import {Fragment, useEffect, useState} from 'react'
 import {Listbox, Transition} from '@headlessui/react'
 import {HiCheck, HiSelector} from "react-icons/hi";
-// import categories from '../service/Constants'
 
 const categories = [
-    {name: 'Elements'},
-    {name: 'Forms'},
+    {name: 'Element'},
+    {name: 'Form'},
     {name: 'Commerce'},
     {name: 'Navigation'},
-    {name: 'Sections'},
+    {name: 'Section'},
     {name: 'List'},
 ]
 
-export default function CategoryPicker({onSelectionChanged}) {
+export default function CategoryPicker({initialValue, onSelectionChanged}) {
     const [selected, setSelected] = useState(categories[0])
+
+    useEffect(() => setSelected(initialValue),[initialValue])
 
     function selectionChanged(newValue){
         setSelected(newValue);

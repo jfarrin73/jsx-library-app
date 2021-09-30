@@ -39,11 +39,12 @@ class DataService {
     }
 
     deleteEntry(id) {
-        return axios.delete(ENTRIES + `/${id}`);
+        return axios.delete(ENTRIES + `/${id}`, {headers: {Authorization: `Bearer ${getToken()}`}});
     }
 
     updateEntry(entry) {
-        return axios.put(ENTRIES + `/${entry.id}`, entry);
+        console.log(entry.id);
+        return axios.patch(ENTRIES + `/find/${entry.id}`, entry, {headers: {Authorization: `Bearer ${getToken()}`}});
     }
 
     async createEntry(entry) {

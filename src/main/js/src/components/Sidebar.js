@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react'
+import {useState} from 'react'
 import {RadioGroup} from '@headlessui/react'
 import {HiChevronDoubleRight} from 'react-icons/hi'
 
@@ -6,7 +6,7 @@ export default function Sidebar({options, onSelectionChange}) {
     const [selected, setSelected] = useState(options[0]);
 
     // THIS IS A HACKY FIX TO AN ISSUE CAUSED BY OPTIONS CHANGING WHEN ISLOGGED IN CHANGES
-    useEffect(() => setSelected(selected));
+    // useEffect(() => setSelected(selected),[]);
 
     function onSelection(newSelection){
         setSelected(newSelection);
@@ -24,14 +24,14 @@ export default function Sidebar({options, onSelectionChange}) {
                             <RadioGroup.Option
                                 key={option.name}
                                 value={option}
-                                className="relative  rounded-lg shadow-md bg-white dark:bg-gray-800 cursor-pointer flex focus:outline-none">
+                                className="relative rounded-lg shadow-md bg-white dark:bg-gray-800 cursor-pointer flex focus:outline-none group">
                                 {({ active, checked }) => (
-                                    <div className={`flex items-center justify-between w-full px-5 py-4 rounded-lg ${checked ? 'bg-gray-700' : 'bg-gray-800'}`}>
+                                    <div className={`flex items-center justify-between w-full px-5 py-4 rounded-lg ${checked ? 'bg-white dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`}>
                                         <div className="text-lg flex-grow">
                                             <RadioGroup.Label
                                                 as="p"
                                                 className={`font-medium ${
-                                                    checked ? 'text-green-700 dark:text-green-300' : 'text-gray-900 dark:text-gray-300 hover:text-green-700 dark:hover:text-green-300'
+                                                    checked ? 'text-green-700 dark:text-green-300' : 'text-gray-900 dark:text-gray-300 group-hover:text-green-700 dark:group-hover:text-green-300'
                                                 }`}>
                                                 {option.name}
                                             </RadioGroup.Label>
