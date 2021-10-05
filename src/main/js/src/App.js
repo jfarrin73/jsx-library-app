@@ -189,7 +189,7 @@ function App() {
             <header className="w-full bg-white dark:bg-gray-800 flex justify-between items-center shadow-md z-50">
                 <h1 className="text-3xl p-4 text-green-700 dark:text-green-300">React JSX Library</h1>
 
-                <div className="flex bg-gray-900 items-center rounded-full w-96">
+                <div className="flex bg-gray-200 dark:bg-gray-900 items-center rounded-full w-96">
                     <HiOutlineSearch className="text-gray-400 text-xl ml-3 w-6"/>
                     <input
                         type="text" placeholder="Search..." value={searchText}
