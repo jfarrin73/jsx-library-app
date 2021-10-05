@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+  backend:
+    image: "jfarrin/jsx-library-app:latest"
+    ports:
+      - "80:8080"
+    restart: "always"
+    environment:
+      JWT: ${JWT_SECRET}
+      SPRING_DATASOURCE_URL: ${DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
