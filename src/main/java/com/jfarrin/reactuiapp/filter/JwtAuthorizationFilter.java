@@ -20,7 +20,7 @@ import static com.jfarrin.reactuiapp.constant.SecurityConstant.*;
 
 @Component
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
-    private JwtTokenProvider jwtTokenProvider;
+    private final JwtTokenProvider jwtTokenProvider;
 
     public JwtAuthorizationFilter(JwtTokenProvider jwtTokenProvider){
         this.jwtTokenProvider = jwtTokenProvider;
@@ -28,11 +28,8 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-//        response.addHeader("Access-Control-Allow-Origin", "*");
-//        response.addHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
-//        response.addHeader("Access-Control-Allow-Headers", "Origin, Content-Type, X-Auth-Token");
         if (request.getMethod().equalsIgnoreCase(OPTIONS_HTTP_METHOD)) {
-            response.addHeader("Access-Control-Allow-Origin", "http://localhost:8081");
+            response.addHeader("Access-Control-Allow-Origin", "http://localhost:8080");
             response.setStatus(HttpStatus.OK.value());
         } else {
             String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);

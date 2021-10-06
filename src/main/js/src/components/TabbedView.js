@@ -4,6 +4,7 @@ import Preview from "./Preview";
 import CodeBlockComponent from "./CodeBlockComponent";
 import React from 'react';
 import EditMenu from "./EditMenu";
+import toast, { Toaster } from 'react-hot-toast';
 
 function classNames(...classes) {
     return classes.filter(Boolean).join(' ')
@@ -14,6 +15,34 @@ export default function TabbedView({entry,allowEdit,editEntry,deleteEntry}) {
     function editHandler(event){
         event.preventDefault();
         editEntry(entry);
+    }
+
+    function copyToClipboard(){
+        navigator.clipboard.writeText(entry.code).then(function() {
+            /* clipboard successfully set */
+            toast.success("Code copied to clipboard",
+                {
+                    style: {
+                        border: 'solid 1px #6EE7B750',
+                        borderRadius: '10px',
+                        background: '#111827',
+                        color: '#6EE7B7',
+                        boxShadow: "none",
+                    },
+                });
+        }, function() {
+            /* clipboard write failed */
+            toast.error("Unable to copy code to clipboard",
+            {
+                style: {
+                    border: 'solid 1px #DC262650',
+                    borderRadius: '10px',
+                    background: '#111827',
+                    color: '#EF4444',
+                    boxShadow: "none",
+                },
+            });
+        });
     }
 
     return (
@@ -39,8 +68,12 @@ export default function TabbedView({entry,allowEdit,editEntry,deleteEntry}) {
                                     </Tab>
                                 ))}
                             </Tab.List>
-                            <button className="border border-green-700 font-bold text-green-700 dark:text-green-500 dark:border-green-500 py-1.5 px-4 my-2.5 rounded-lg">Copy</button>
-                            {allowEdit && <div className="my-2"><EditMenu entryId={entry.id} onEdit={editHandler} onDelete={deleteEntry}/></div>}
+                            <button
+                                onClick={(_) => copyToClipboard()}
+                                className="border border-green-700 font-bold text-green-700 dark:text-green-500 dark:border-green-500 py-1.5 px-4 my-2.5 rounded-lg">
+                                Copy
+                            </button>
+                                {allowEdit && <div className="my-2"><EditMenu entryId={entry.id} onEdit={editHandler} onDelete={deleteEntry}/></div>}
                         </div>
 
                     </div>
@@ -68,6 +101,7 @@ export default function TabbedView({entry,allowEdit,editEntry,deleteEntry}) {
                     className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 pb-0.5 rounded-md">{entry.createdBy}</button>
             </div>
 
+            <Toaster />
         </div>
     )
 }
