@@ -9,13 +9,14 @@ import Sidebar from "./components/Sidebar";
 import EditEntry from "./components/EditEntry";
 import NewEntry from "./components/NewEntry";
 import { HiOutlineSearch,HiX } from "react-icons/hi";
+import { GiPiranha } from "react-icons/gi";
 import Fuse from 'fuse.js'
 
-const DISCOVER = "Discover";
+const ALL = "All";
 const MY_COMPONENTS = "My Components";
 
 const defaultOptions = [
-    { name: "Discover" },
+    { name: "All" },
     { name: 'Element' },
     { name: 'Form' },
     { name: 'Commerce' },
@@ -56,6 +57,7 @@ const searchOptions = {
 function App() {
 
     const [data, setData] = useState([]);
+    const [dataCache, setDataCache] = useState([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     let [selectedView, setSelectedView] = useState("");
     const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
@@ -63,6 +65,8 @@ function App() {
     const [activeEntry, setActiveEntry] = useState(EMPTY_ENTRY)
     const [options, setOptions] = useState(defaultOptions);
     const [searchText, setSearchText] = useState("");
+
+    const [isUserData, setIsUserData] = useState(false);
 
     const NO_USER_COMPONENTS_MESSAGE = "You have not created any components";
     const NO_COMPONENTS_MESSAGE = "No components have been added yet";
@@ -72,12 +76,11 @@ function App() {
         DataService.getCurrentUserName().then(r =>{
             if (r.status === 200){
                 setIsLoggedIn(true);
-                loginActions();
             }
         });
     },[]);
 
-    useEffect(() => loadData("Discover"),[]);
+    useEffect(() => loadData(),[]);
 
     let fuse = new Fuse(data,searchOptions);
 
@@ -88,17 +91,8 @@ function App() {
             setIsLoggedIn(true);
             const token = loginResponse.headers["jwt-token"];
             localStorage.setItem("token", JSON.stringify(token));
-            loginActions();
         } catch (e){
             return Promise.reject(e.response.data);
-        }
-    }
-
-    function loginActions(){
-        console.log("Login Actions");
-        if (options[options.length - 1].name !== MY_COMPONENTS){
-            options.push({name: MY_COMPONENTS})
-            setOptions(options);
         }
     }
 
@@ -112,11 +106,11 @@ function App() {
     async function register(user){
         try{
             console.log("App register: " + user.username);
-            const registerResponse = await DataService.register(user);
-            let tempPassword = registerResponse.data;
-            alert("Your temporary password is: " + tempPassword);
+            await DataService.register(user);
         } catch (e){
-            return Promise.reject(e.response.data);
+            // TODO: need to reject promise?
+            // await Promise.reject(e.response.data);
+            return e.response.data.message;
         }
     }
 
@@ -145,18 +139,25 @@ function App() {
     function sidebarSelected(selection){
         console.log("selection: " + selection);
         setSelectedView(selection);
-        loadData(selection);
+        setData(selection === ALL ? dataCache : dataCache.filter(x => x.category === selection));
     }
 
-    function loadData(selection) {
+    function loadData(isUserData) {
+        isUserData = isUserData || false;
         console.log("Load Data");
-        if (selection === DISCOVER) {
-            DataService.retrieveAllEntries("", false).then(response => setData(response.data));
-        } else if (selection === MY_COMPONENTS) {
-            DataService.retrieveAllEntries("", true).then(response => setData(response.data));
-        } else {
-            DataService.retrieveAllEntries(selection, false).then(response => setData(response.data));
-        }
+        DataService.retrieveAllEntries("", isUserData).then(response => {
+            setData(response.data);
+            setDataCache((response.data));
+        });
+    }
+
+    function menuSelected(isMyComponents){
+        console.log("Menu Selected. isMyComponents: " + isMyComponents);
+        console.log("selectedView: " + selectedView);
+        setIsUserData(!isUserData);
+        loadData(isMyComponents);
+        // TODO: this isn't working. It's supposed to filter the items based on the currently selected view
+        sidebarSelected(selectedView);
     }
 
     function searchTextChange(event){
@@ -164,8 +165,6 @@ function App() {
         setSearchText(event.target.value)
 
         console.log(fuse.search(event.target.value));
-
-
 
         if (event.target.value === ""){
             loadData(selectedView);
@@ -176,7 +175,7 @@ function App() {
 
     function getEmptyMessage(){
         console.log("Get Empty Message");
-        if (selectedView === DISCOVER){
+        if (selectedView === ALL){
             return NO_COMPONENTS_MESSAGE;
         } else if (selectedView === MY_COMPONENTS){
             return NO_USER_COMPONENTS_MESSAGE;
@@ -187,9 +186,22 @@ function App() {
     return (
         <div className="flex flex-col h-screen w-screen bg-gray-200 dark:bg-gray-900">
             <header className="w-full bg-white dark:bg-gray-800 flex justify-between items-center shadow-md z-50">
-                <h1 className="text-3xl p-4 text-green-700 dark:text-green-300">React JSX Library</h1>
+                <div className="flex space-x-4 pl-4">
+                    <GiPiranha className="text-green-700 dark:text-green-300 text-4xl my-4"/>
+                    {isLoggedIn
+                        ? <div className="flex px-4 space-x-2">
+                              <button
+                                  onClick={_ => menuSelected(false)}
+                                  className={`${isUserData ? "text-green-700 dark:text-green-300" : "text-gray-700 dark:text-gray-300"} text-2xl font-semibold py-2 px-2 transition ease-in-out duration-500`}>Discover</button>
+                              <button
+                                  onClick={_ => menuSelected(true)}
+                                  className={`${isUserData ? "text-gray-700 dark:text-gray-300" : "text-green-700 dark:text-green-300" } text-2xl font-semibold py-2 px-2 transition ease-in-out duration-500`}>My Components</button>
+                          </div>
+                        : <h1 className="text-3xl py-4 text-green-700 dark:text-green-300">JSX Library</h1>}
 
-                <div className="flex bg-gray-200 dark:bg-gray-900 items-center rounded-full w-96">
+                </div>
+
+                <div className="flex bg-gray-200 dark:bg-gray-900 items-center rounded-full w-96 my-3">
                     <HiOutlineSearch className="text-gray-400 text-xl ml-3 w-6"/>
                     <input
                         type="text" placeholder="Search..." value={searchText}
@@ -197,16 +209,14 @@ function App() {
                         className="px-4 py-2 text-xl text-black dark:text-white w-full bg-transparent outline-none"/>
 
                     <div className="w-10">
-                        {searchText !== "" &&<button
-                            onClick={() => setSearchText("")}
-                            className={"hover:bg-gray-800 text-gray-400 text-xl p-2 mr-1 rounded-full"}>
-                             <HiX />
-                        </button>}
+                        {searchText !== "" && <button
+                                                  onClick={() => setSearchText("")}
+                                                  className={"hover:bg-gray-800 text-gray-400 text-xl p-2 mr-1 rounded-full"}>
+                                                  <HiX />
+                                              </button>}
                     </div>
 
                 </div>
-
-
 
                 <div className="flex items-center space-x-2 px-4">
                     {isLoggedIn
@@ -214,7 +224,7 @@ function App() {
                             <button
                                 type="button"
                                 onClick={() => setIsEntryModalOpen(true)}
-                                className="px-4 py-2 my-3 rounded-lg bg-gradient-to-r from-green-400 to-green-700 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md">
+                                className="px-4 py-2 my-3 rounded-lg bg-green-700 hover:bg-green-600 text-white transition ease-in duration-200 text-center text-base font-semibold shadow-md transition duration-500 ease-in-out">
                                 Add
                             </button>
                             <button
@@ -224,7 +234,7 @@ function App() {
                                 Log Out
                             </button>
                         </div>
-                        : <div className="flex space-x-2"><RegisterModal register={register}/> <LoginModal login={login}/></div>}
+                        : <div className="flex space-x-2"><RegisterModal handleRegister={register}/> <LoginModal handleLogin={login}/></div>}
                     <ThemeButton isDarkTheme={true}/>
                 </div>
             </header>
@@ -251,30 +261,3 @@ function App() {
 }
 
 export default App;
-
-
-{/*<div className="bg-white dark:bg-gray-800 p-4 rounded-lg w-full">*/}
-{/*    <div className="flex justify-between items-start">*/}
-{/*        <h2 className="text-gray-700 dark:text-gray-100 text-2xl mb-4">Component Editor</h2>*/}
-{/*        <button*/}
-{/*            className="bg-green-700 hover:bg-green-600 text-white py-2 px-4 rounded-lg">Save*/}
-{/*        </button>*/}
-{/*    </div>*/}
-
-{/*    <JsxRenderer/>*/}
-
-{/*</div>*/}
-
-{/*<div className="bg-white dark:bg-gray-800 p-4 rounded-lg w-full">*/}
-{/*    <div className="flex justify-between items-start mb-4">*/}
-{/*        <div>*/}
-{/*            <h2 className="text-gray-700 dark:text-gray-100 text-2xl">Theme Button</h2>*/}
-{/*            <p className="dark:text-gray-400">This is a complete component of a button to toggle between light and dark theme using Tailwind css</p>*/}
-{/*        </div>*/}
-{/*        <button className="border border-green-500 font-bold text-green-500 py-2 px-4 my-2 rounded-lg">Copy</button>*/}
-{/*    </div>*/}
-
-{/*    <div>*/}
-{/*        <CodeBlockComponent codeString={codeSnippetLong}/>*/}
-{/*    </div>*/}
-{/*</div>*/}
