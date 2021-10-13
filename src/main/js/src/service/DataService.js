@@ -52,7 +52,11 @@ class DataService {
         return await axios.post(ENTRIES + `/create`, entry, {headers: {Authorization: `Bearer ${getToken()}`}});
     }
 
-    async getCurrentUserName(){
+    async favoriteEntry(entry){
+        return axios.patch(ENTRIES + `/favorite/${entry.id}`, entry, {headers: {Authorization: `Bearer ${getToken()}`}});
+    }
+
+    async getCurrentUserData(){
         return await axios.get(USER + `/current`,{headers: {Authorization: `Bearer ${getToken()}`}})
     }
 

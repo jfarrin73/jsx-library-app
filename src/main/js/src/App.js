@@ -8,14 +8,15 @@ import RegisterModal from "./components/RegisterModal";
 import Sidebar from "./components/Sidebar";
 import EditEntry from "./components/EditEntry";
 import NewEntry from "./components/NewEntry";
-import { HiOutlineSearch,HiX } from "react-icons/hi";
+import {HiOutlineSearch, HiX, HiLibrary, HiHeart} from "react-icons/hi";
 import { GiPiranha } from "react-icons/gi";
 import Fuse from 'fuse.js'
+import Picker from "./components/Picker";
 
 const ALL = "All";
 const MY_COMPONENTS = "My Components";
 
-const defaultOptions = [
+const options = [
     { name: "All" },
     { name: 'Element' },
     { name: 'Form' },
@@ -23,6 +24,12 @@ const defaultOptions = [
     { name: 'Navigation' },
     { name: 'Section' },
     { name: 'List' },
+];
+
+const menu = [
+    {name: "Discover", icon: <GiPiranha/>},
+    {name: "My Components", icon: <HiLibrary/>},
+    {name: "Favorites", icon: <HiHeart/>},
 ]
 
 const EMPTY_ENTRY = {
@@ -50,7 +57,8 @@ const searchOptions = {
     // ignoreFieldNorm: false,
     keys: [
         "title",
-        "category"
+        "category",
+        "code"
     ]
 };
 
@@ -59,28 +67,33 @@ function App() {
     const [data, setData] = useState([]);
     const [dataCache, setDataCache] = useState([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    let [selectedView, setSelectedView] = useState("");
+    const [selectedView, setSelectedView] = useState(options[0].name);
     const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
     const [isEditEntryModalOpen, setIsEditEntryModalOpen] = useState(false);
     const [activeEntry, setActiveEntry] = useState(EMPTY_ENTRY)
-    const [options, setOptions] = useState(defaultOptions);
     const [searchText, setSearchText] = useState("");
-
+    const [userFavorites, setUserFavorites] = useState([]);
     const [isUserData, setIsUserData] = useState(false);
+    const [isFavoritesSelected, setIsFavoritesSelected] = useState(false);
 
     const NO_USER_COMPONENTS_MESSAGE = "You have not created any components";
     const NO_COMPONENTS_MESSAGE = "No components have been added yet";
     const NO_VIEW_COMPONENTS_MESSAGE = "No " + selectedView + " components have been added yet";
 
     useEffect(() => {
-        DataService.getCurrentUserName().then(r =>{
+        DataService.getCurrentUserData().then(r =>{
             if (r.status === 200){
                 setIsLoggedIn(true);
+                setUserFavorites(r.data.favoriteIds);
             }
         });
     },[]);
 
     useEffect(() => loadData(),[]);
+
+    useEffect(() => {
+        applyCategoryFilter(selectedView);
+    }, [selectedView, dataCache, isFavoritesSelected])
 
     let fuse = new Fuse(data,searchOptions);
 
@@ -89,6 +102,8 @@ function App() {
             const loginResponse = await DataService.login(user);
             console.log("User Login")
             setIsLoggedIn(true);
+            console.log(loginResponse.data);
+            setUserFavorites(loginResponse.data.favoriteIds);
             const token = loginResponse.headers["jwt-token"];
             localStorage.setItem("token", JSON.stringify(token));
         } catch (e){
@@ -99,8 +114,7 @@ function App() {
     function logout(){
         DataService.ClearStorage();
         setIsLoggedIn(false);
-        options.pop();
-        setOptions(options);
+        setUserFavorites([]);
     }
 
     async function register(user){
@@ -136,28 +150,29 @@ function App() {
         await DataService.deleteEntry(entryId);
     }
 
-    function sidebarSelected(selection){
-        console.log("selection: " + selection);
+    function applyCategoryFilter(selection){
+        console.log("applyCategoryFilter. selection parameter: " + selection);
         setSelectedView(selection);
-        setData(selection === ALL ? dataCache : dataCache.filter(x => x.category === selection));
+        if (isFavoritesSelected){
+            setData(selection === ALL ? dataCache.filter(y => userFavorites.includes(y.id)) : dataCache.filter(x => x.category === selection).filter(y => userFavorites.includes(y.id)));
+        } else {
+            setData(selection === ALL ? dataCache : dataCache.filter(x => x.category === selection));
+        }
     }
 
-    function loadData(isUserData) {
+    function loadData(isUserData = false) {
         isUserData = isUserData || false;
         console.log("Load Data");
         DataService.retrieveAllEntries("", isUserData).then(response => {
-            setData(response.data);
             setDataCache((response.data));
         });
     }
 
-    function menuSelected(isMyComponents){
-        console.log("Menu Selected. isMyComponents: " + isMyComponents);
-        console.log("selectedView: " + selectedView);
-        setIsUserData(!isUserData);
-        loadData(isMyComponents);
-        // TODO: this isn't working. It's supposed to filter the items based on the currently selected view
-        sidebarSelected(selectedView);
+    function menuSelected(selected){
+        console.log("Menu Selected. selected: " + selected);
+        setIsUserData(selected === menu[1].name);
+        setIsFavoritesSelected(selected === menu[2].name)
+        loadData(selected === menu[1].name); // My Components
     }
 
     function searchTextChange(event){
@@ -184,24 +199,15 @@ function App() {
     }
 
     return (
-        <div className="flex flex-col h-screen w-screen bg-gray-200 dark:bg-gray-900">
+        <div className="flex flex-col w-screen h-screen bg-gray-200 dark:bg-gray-900">
             <header className="w-full bg-white dark:bg-gray-800 flex justify-between items-center shadow-md z-50">
                 <div className="flex space-x-4 pl-4">
                     <GiPiranha className="text-green-700 dark:text-green-300 text-4xl my-4"/>
-                    {isLoggedIn
-                        ? <div className="flex px-4 space-x-2">
-                              <button
-                                  onClick={_ => menuSelected(false)}
-                                  className={`${isUserData ? "text-green-700 dark:text-green-300" : "text-gray-700 dark:text-gray-300"} text-2xl font-semibold py-2 px-2 transition ease-in-out duration-500`}>Discover</button>
-                              <button
-                                  onClick={_ => menuSelected(true)}
-                                  className={`${isUserData ? "text-gray-700 dark:text-gray-300" : "text-green-700 dark:text-green-300" } text-2xl font-semibold py-2 px-2 transition ease-in-out duration-500`}>My Components</button>
-                          </div>
-                        : <h1 className="text-3xl py-4 text-green-700 dark:text-green-300">JSX Library</h1>}
-
+                    <h1 className="hidden lg:block xl:block text-3xl py-4 text-green-700 dark:text-green-300">JSX Library</h1>
                 </div>
 
-                <div className="flex bg-gray-200 dark:bg-gray-900 items-center rounded-full w-96 my-3">
+                {/*SEARCHBAR*/}
+                <div className="flex bg-gray-200 dark:bg-gray-900 items-center rounded-full w-full max-w-md my-3 mx-2">
                     <HiOutlineSearch className="text-gray-400 text-xl ml-3 w-6"/>
                     <input
                         type="text" placeholder="Search..." value={searchText}
@@ -215,10 +221,10 @@ function App() {
                                                   <HiX />
                                               </button>}
                     </div>
-
                 </div>
 
-                <div className="flex items-center space-x-2 px-4">
+                {/*REGISTER LOGIN ADD LOGOUT*/}
+                <div className="flex items-center space-x-2 pr-4">
                     {isLoggedIn
                         ? <div className="flex space-x-2">
                             <button
@@ -239,14 +245,22 @@ function App() {
                 </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto space-x-4 flex justify-center items-start pt-4">
+            <div className="flex-1 overflow-y-auto space-x-4 flex pt-4 px-4">
 
-                <Sidebar options={options} onSelectionChange={sidebarSelected}/>
+                {/*SIDEBAR*/}
+                <div className="top-0 sticky w-full max-w-xs">
+                    {isLoggedIn &&
+                    <div className="pb-4">
+                        <Picker options={menu} initialValue={menu[0]} onSelectionChanged={menuSelected}/>
+                    </div>}
+                    <Sidebar options={options} onSelectionChange={applyCategoryFilter}/>
+                </div>
 
-                <div className="w-1/2 flex flex-col space-y-4 items-center">
+                {/*MAIN*/}
+                <div className="flex flex-col space-y-4 items-center w-3/4 lg:w-5/6">
                     {data.length === 0
                         ? <h2 className="text-2xl dark:text-gray-200 pt-7">{getEmptyMessage()}</h2>
-                        : data.map((entry) => <TabbedView entry={entry} allowEdit={selectedView === MY_COMPONENTS} editEntry={editEntry} key={entry.id} deleteEntry={deleteEntry}/>)}
+                        : data.map((entry) => <TabbedView isLoggedIn={isLoggedIn} userFavorites={userFavorites} entry={entry} allowEdit={isUserData} editEntry={editEntry} key={entry.id} deleteEntry={deleteEntry}/>)}
                 </div>
 
                 {/*SPACER TO KEEP EVERYTHING ELSE CENTERED*/}
@@ -254,6 +268,7 @@ function App() {
 
             </div>
 
+            {/*MODALS*/}
             <NewEntry isOpen={isEntryModalOpen} setIsOpen={setIsEntryModalOpen} addEntry={addNewEntry}/>
             <EditEntry isOpen={isEditEntryModalOpen} setIsOpen={setIsEditEntryModalOpen} entryToEdit={activeEntry} updateEntry={updateEntry}/>
         </div>

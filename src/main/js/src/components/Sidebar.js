@@ -15,18 +15,19 @@ export default function Sidebar({options, onSelectionChange}) {
     }
 
     return (
-        <div className="w-64">
-            <div className="w-full max-w-md mx-auto cursor-pointer">
+        <div className="w-full">
+            <h3 className="text-xl dark:text-gray-300 font-bold px-4 py-2">Filter</h3>
+            <div className="cursor-pointer">
                 <RadioGroup value={selected} onChange={onSelection}>
                     <RadioGroup.Label className="sr-only">Server size</RadioGroup.Label>
-                    <div className="divide-y divide-gray-200 dark:divide-gray-900 divide-solid">
+                    <div className=" divide-gray-200 dark:divide-gray-800 border-t-2 border-gray-700">
                         {options.map(option => (
                             <RadioGroup.Option
                                 key={option.name}
                                 value={option}
-                                className="relative rounded-lg shadow-md bg-white dark:bg-gray-800 cursor-pointer flex focus:outline-none group">
+                                className="cursor-pointer flex focus:outline-none group">
                                 {({ active, checked }) => (
-                                    <div className={`flex items-center justify-between w-full px-5 py-4 rounded-lg ${checked ? 'bg-white dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`}>
+                                    <div className={`flex items-center justify-between rounded-lg w-full px-5 py-2 ${checked ? 'bg-white dark:bg-gray-800' : 'bg-white dark:bg-gray-900'}`}>
                                         <div className="text-lg flex-grow">
                                             <RadioGroup.Label
                                                 as="p"

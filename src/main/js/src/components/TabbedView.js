@@ -1,20 +1,43 @@
-// import { useState } from 'react'
 import { Tab } from '@headlessui/react'
 import Preview from "./Preview";
 import CodeBlockComponent from "./CodeBlockComponent";
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import EditMenu from "./EditMenu";
 import toast, { Toaster } from 'react-hot-toast';
+import {HiHeart, HiThumbUp, HiThumbDown, HiOutlineHeart} from "react-icons/hi";
+import DataService from "../service/DataService";
 
 function classNames(...classes) {
     return classes.filter(Boolean).join(' ')
 }
 
-export default function TabbedView({entry,allowEdit,editEntry,deleteEntry}) {
+export default function TabbedView({isLoggedIn,userFavorites,entry,allowEdit,editEntry,deleteEntry}) {
+
+    const [isFavorite, setIsFavorite] = useState(false);
+
+    useEffect(() => {
+        setIsFavorite(userFavorites && userFavorites.includes(entry.id));
+    }, [userFavorites])
 
     function editHandler(event){
         event.preventDefault();
         editEntry(entry);
+    }
+
+    async function likeDislikeEntry(isLike){
+        // await DataService.likeEntry(isLike);
+    }
+
+    async function favoriteEntry(_){
+        try {
+            const response = await DataService.favoriteEntry(entry);
+            setIsFavorite(response.data);
+            toast(`${entry.title} ${isFavorite ? "saved to" : "removed from"} favorites`);
+        } catch (e) {
+            console.log("Error saving entry to favorites");
+            // TODO: display login modal
+        }
+
     }
 
     function copyToClipboard(){
@@ -86,21 +109,34 @@ export default function TabbedView({entry,allowEdit,editEntry,deleteEntry}) {
                         </div>
                     </Tab.Panel>
                     <Tab.Panel className='focus:outline-none'>
-                        <div className="flex justify-center p-4">
+                        <div className="p-4 container mx-auto">
                             <CodeBlockComponent codeString={entry.code}/>
                         </div>
                     </Tab.Panel>
                 </Tab.Panels>
             </Tab.Group>
 
-            <div className="flex justify-end space-x-1">
-                <button
-                    className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 pb-0.5 rounded-md">{entry.category}</button>
-                <button
-                    onClick={() => alert("Someday this might show you more components by this user")}
-                    className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 pb-0.5 rounded-md">{entry.createdBy}</button>
+            <div className="flex justify-between">
+                <div className="flex text-green-700 dark:text-green-300 text-lg">
+                    {isLoggedIn && <button
+                        onClick={favoriteEntry}
+                        className="hover:bg-black hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10 p-2 rounded-full">
+                        {isFavorite ? <HiHeart/> : <HiOutlineHeart/>}</button>}
+                    <button
+                        onClick={_ =>likeDislikeEntry(true)}
+                        className="flex items-center space-x-2 hover:bg-black hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10 px-2 rounded-full"><p>0</p><HiThumbUp/></button>
+                    <button
+                        onClick={_ => likeDislikeEntry(false)}
+                        className="flex items-center space-x-2 hover:bg-black hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10 px-2 rounded-full"><p>0</p><HiThumbDown className=""/></button>
+                </div>
+                <div className="flex space-x-1">
+                    <button
+                        className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 pb-0.5 rounded-md">{entry.category}</button>
+                    <button
+                        onClick={() => alert("Someday this might show you more components by this user")}
+                        className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 pb-0.5 rounded-md">{entry.createdBy}</button>
+                </div>
             </div>
-
             <Toaster />
         </div>
     )
