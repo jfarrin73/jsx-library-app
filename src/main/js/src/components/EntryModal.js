@@ -96,7 +96,7 @@ export default function EntryModal({isOpen,setIsOpen,entry,saveHandler}) {
                                             onChange={(e) => setDescription(e.target.value)}
                                             className="outline-none rounded-lg align-text-top align-top shadow-md h-24 p-2 bg-white dark:bg-gray-900 dark:text-white placeholder-gray-400"/>
 
-                                        <JsxRenderer onChange={(e => setCode(e.target.value))} code={code}/>
+                                        <JsxRenderer onChange={(e => setCode(e))}/>
                                     </div>
                             </div>
                         </Transition.Child>

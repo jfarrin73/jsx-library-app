@@ -19,8 +19,7 @@ export default function Sidebar({options, onSelectionChange}) {
             <h3 className="text-xl dark:text-gray-300 font-bold px-4 py-2">Filter</h3>
             <div className="cursor-pointer">
                 <RadioGroup value={selected} onChange={onSelection}>
-                    <RadioGroup.Label className="sr-only">Server size</RadioGroup.Label>
-                    <div className=" divide-gray-200 dark:divide-gray-800 border-t-2 border-gray-700">
+                    <div className=" divide-gray-200 dark:divide-gray-800 border-t-2 pt-1 border-gray-400 dark:border-gray-700">
                         {options.map(option => (
                             <RadioGroup.Option
                                 key={option.name}

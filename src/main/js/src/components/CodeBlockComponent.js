@@ -1,6 +1,6 @@
 import React from "react";
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import { twilight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+// import SyntaxHighlighter from 'react-syntax-highlighter';
+// import { twilight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { CopyBlock, dracula, hybrid, codepen } from "react-code-blocks";
 
 const CodeBlockComponent = ({codeString}) => {

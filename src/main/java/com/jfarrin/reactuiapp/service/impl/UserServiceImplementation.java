@@ -2,6 +2,7 @@ package com.jfarrin.reactuiapp.service.impl;
 
 import com.jfarrin.reactuiapp.constant.Role;
 import com.jfarrin.reactuiapp.model.User;
+import com.jfarrin.reactuiapp.model.UserData;
 import com.jfarrin.reactuiapp.model.UserPrincipal;
 import com.jfarrin.reactuiapp.exceptions.EmailExistException;
 import com.jfarrin.reactuiapp.exceptions.EmailNotFoundException;
@@ -79,14 +80,14 @@ public class UserServiceImplementation implements UserService, UserDetailsServic
     }
 
     @Override
-    public String register(String firstName, String lastName, String username, String email) throws EmailExistException, UsernameExistException, UserNotFoundException {
+    public User register(String username, String email, String password) throws EmailExistException, UsernameExistException, UserNotFoundException {
         validateNewUsernameAndEmail(EMPTY, username, email);
         User user = new User();
         user.setUserId(generateUserId());
-        String password = generatePassword();
+//        String password = generatePassword();
         String encodedPassword = encodePassword(password);
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
+        user.setFirstName("");
+        user.setLastName("");
         user.setUsername(username);
         user.setEmail(email);
         user.setJoinDate(LocalDate.now());
@@ -95,9 +96,8 @@ public class UserServiceImplementation implements UserService, UserDetailsServic
         user.setNotLocked(true);
         user.setRoles(Role.ROLE_USER.name());
         user.setAuthorities(Role.ROLE_USER.getAuthorities());
-        userRepository.save(user);
-        LOGGER.info("New user password: " + password);
-        return password;
+//        LOGGER.info("New user password: " + password);
+        return userRepository.save(user);
     }
 
     @Override
@@ -133,6 +133,13 @@ public class UserServiceImplementation implements UserService, UserDetailsServic
         userRepository.save(currentUser);
 
         return currentUser;
+    }
+
+    public void updateUserData(UserData userData) {
+        User currentUser = this.userRepository.findUserByUsername(userData.getUsername());
+        currentUser.setFavoriteIds(userData.getFavoriteIds());
+        currentUser.setLikesDislikes(userData.getLikeDislikes());
+        this.userRepository.save(currentUser);
     }
 
     @Override

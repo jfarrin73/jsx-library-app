@@ -40,7 +40,7 @@ export default function RegisterModal({handleRegister}) {
                 <button
                     type="button"
                     onClick={openModal}
-                    className="px-4 py-2 text-sm font-medium bg-green-700 hover:bg-green-600 text-black dark:text-white transition duration-500 ease-in-out rounded-md">
+                    className="px-4 py-2 text-sm font-medium bg-green-700 hover:bg-green-600 text-white transition duration-500 ease-in-out rounded-md">
                     Sign Up
                 </button>
             </div>

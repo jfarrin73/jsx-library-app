@@ -56,6 +56,14 @@ class DataService {
         return axios.patch(ENTRIES + `/favorite/${entry.id}`, entry, {headers: {Authorization: `Bearer ${getToken()}`}});
     }
 
+    async likeEntry(entry){
+        return axios.patch(ENTRIES + `/like/${entry.id}`, entry,{headers: {Authorization: `Bearer ${getToken()}`}})
+    }
+
+    async dislikeEntry(entry){
+        return axios.patch(ENTRIES + `/dislike/${entry.id}`, entry,{headers: {Authorization: `Bearer ${getToken()}`}})
+    }
+
     async getCurrentUserData(){
         return await axios.get(USER + `/current`,{headers: {Authorization: `Bearer ${getToken()}`}})
     }

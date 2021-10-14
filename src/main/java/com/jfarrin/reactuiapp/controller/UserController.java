@@ -2,6 +2,7 @@ package com.jfarrin.reactuiapp.controller;
 
 import com.jfarrin.reactuiapp.model.HttpResponse;
 import com.jfarrin.reactuiapp.model.User;
+import com.jfarrin.reactuiapp.model.UserData;
 import com.jfarrin.reactuiapp.model.UserPrincipal;
 import com.jfarrin.reactuiapp.exceptions.*;
 import com.jfarrin.reactuiapp.service.UserService;
@@ -39,9 +40,8 @@ public class UserController extends ExceptionHandling {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody User user) throws UserNotFoundException, UsernameExistException, EmailExistException {
-        String tempPassword = userService.register(user.getFirstName(), user.getLastName(), user.getUsername(), user.getEmail());
-        return new ResponseEntity<>(tempPassword, OK);
+    public ResponseEntity<User> register(@RequestBody User user) throws UserNotFoundException, UsernameExistException, EmailExistException {
+        return new ResponseEntity<>(userService.register(user.getUsername(), user.getEmail(), user.getPassword()),OK);
     }
 
     @PostMapping("/login")
@@ -86,8 +86,11 @@ public class UserController extends ExceptionHandling {
 
     @GetMapping("/current")
     @PreAuthorize("hasAnyAuthority('user:read')")
-    public ResponseEntity<String> getCurrentUserName(@RequestHeader String authorization){
-        return new ResponseEntity<>(jwtTokenProvider.getSubject(authorization.substring(TOKEN_PREFIX.length())),OK);
+    public ResponseEntity<UserData> getCurrentUserData(@RequestHeader String authorization){
+        String username = jwtTokenProvider.getSubject(authorization.substring(TOKEN_PREFIX.length()));
+        User user = userService.findUserByUsername(username);
+        UserData userData = new UserData(username, user.getFavoriteIds(), user.getLikesDislikes());
+        return new ResponseEntity<>(userData,OK);
     }
 
     @GetMapping("/list")

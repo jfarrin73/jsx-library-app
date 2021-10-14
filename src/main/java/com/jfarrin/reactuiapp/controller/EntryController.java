@@ -1,9 +1,14 @@
 package com.jfarrin.reactuiapp.controller;
 
 import com.jfarrin.reactuiapp.model.Entry;
+import com.jfarrin.reactuiapp.model.User;
+import com.jfarrin.reactuiapp.model.UserData;
 import com.jfarrin.reactuiapp.repository.EntryRepository;
+import com.jfarrin.reactuiapp.repository.UserRepository;
+import com.jfarrin.reactuiapp.service.UserService;
 import com.jfarrin.reactuiapp.utility.JwtTokenProvider;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,7 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.*;
 
 import static com.jfarrin.reactuiapp.constant.SecurityConstant.TOKEN_PREFIX;
 
@@ -22,10 +27,12 @@ public class EntryController {
     private final Sort defaultSort = Sort.by(Sort.Direction.DESC, "created");
 
     private final EntryRepository repository;
+    private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
 
-    public EntryController(EntryRepository repository, JwtTokenProvider jwtTokenProvider) {
+    public EntryController(EntryRepository repository, UserService userService, JwtTokenProvider jwtTokenProvider) {
         this.repository = repository;
+        this.userService = userService;
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
@@ -65,6 +72,68 @@ public class EntryController {
         }
         // User is somehow trying to patch an entry not created by them
         return new ResponseEntity<>(null,HttpStatus.OK);
+    }
+
+    @PatchMapping("/favorite/{id}")
+    @PreAuthorize("hasAnyAuthority('user:create')")
+    public ResponseEntity<Boolean> FavoriteEntryById(@RequestHeader String authorization, @PathVariable Long id){
+        User user = userService.findUserByUsername(getCurrentUserName(authorization));
+        if (user != null){
+            List<Long> favorites = new ArrayList<>(Arrays.asList(user.getFavoriteIds() == null ? new Long[]{} : user.getFavoriteIds()));
+            boolean isRemove = favorites.contains(id);
+            if (isRemove){
+                favorites.remove(id);
+            } else {
+                favorites.add(id);
+            }
+            userService.updateUserData(
+                    new UserData(user.getUsername(), favorites.toArray(new Long[favorites.size()]), user.getLikesDislikes()));
+            return new ResponseEntity<>(!isRemove,HttpStatus.OK);
+        }
+        return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+    }
+
+    @PatchMapping("/like/{id}")
+    @PreAuthorize("hasAnyAuthority('user:create')")
+    public ResponseEntity<Boolean> likeEntryById(@RequestHeader String authorization, @PathVariable Long id){
+        User user = userService.findUserByUsername(getCurrentUserName(authorization));
+        if (user != null){
+            return new ResponseEntity<>(updateVote(user,id),HttpStatus.OK);
+        }
+        return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+    }
+
+    @PatchMapping("/dislike/{id}")
+    @PreAuthorize("hasAnyAuthority('user:create')")
+    public ResponseEntity<Boolean> dislikeEntryById(@RequestHeader String authorization, @PathVariable Long id){
+        System.out.println("id: " + id);
+        System.out.println(getCurrentUserName(authorization));
+        User user = userService.findUserByUsername(getCurrentUserName(authorization));
+        System.out.println("user: " + user);
+        if (user != null){
+            return new ResponseEntity<>(updateVote(user,-id),HttpStatus.OK);
+        }
+        return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+    }
+
+    private boolean updateVote(User user,Long id){
+        boolean isExists = true;
+        List<Long> votes = new ArrayList<>(Arrays.asList(user.getLikesDislikes() == null ? new Long[]{} : user.getLikesDislikes()));
+        System.out.println(votes);
+        // id found, remove it
+        if (votes.contains(id)) {
+            votes.remove(id);
+            isExists = false;
+        }
+        // Opposite id found, flip it
+        else if (votes.contains(-id)) votes.set(votes.indexOf(-id),id);
+            // No id found, add it
+        else votes.add(id);
+
+        System.out.println("here");
+
+        userService.updateUserData(new UserData(user.getUsername(), user.getFavoriteIds(), votes.toArray(new Long[votes.size()])));
+        return isExists;
     }
 
     @DeleteMapping("/{id}")

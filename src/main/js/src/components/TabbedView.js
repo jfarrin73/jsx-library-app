@@ -11,39 +11,44 @@ function classNames(...classes) {
     return classes.filter(Boolean).join(' ')
 }
 
-export default function TabbedView({isLoggedIn,userFavorites,entry,allowEdit,editEntry,deleteEntry}) {
+export default function TabbedView({isLoggedIn,userData,entry,allowEdit,editEntry,deleteEntry}) {
 
     const [isFavorite, setIsFavorite] = useState(false);
+    const [isLike, setIsLike] = useState(false);
+    const [isDislike, setIsDislike] = useState(false);
 
     useEffect(() => {
-        setIsFavorite(userFavorites && userFavorites.includes(entry.id));
-    }, [userFavorites])
+        setIsFavorite(userData.favoriteIds && userData.favoriteIds.includes(entry.id));
+        setIsLike(userData.likesDislikes && userData.likesDislikes.includes(entry.id));
+        setIsDislike(userData.likesDislikes && userData.likesDislikes.includes(-entry.id));
+    }, [userData.favoriteIds])
 
     function editHandler(event){
         event.preventDefault();
         editEntry(entry);
     }
 
-    async function likeDislikeEntry(isLike){
-        // await DataService.likeEntry(isLike);
+    async function like(){
+        console.log("entry Id: " + entry.id);
+        const result = await DataService.likeEntry(entry);
+        console.log(result);
+        console.log("like: " + entry.id);
+        console.log("result: " + result.data);
+        setIsLike(result.data);
+        if (result.data) setIsDislike(false);
+    }
+    async function dislike(){
+        const result = (await DataService.dislikeEntry(entry)).data;
+        console.log("dislike: " + entry.id);
+        console.log("result: " + result);
+        setIsDislike(result);
+        if (result) setIsLike(false);
     }
 
     async function favoriteEntry(_){
         try {
             const response = await DataService.favoriteEntry(entry);
-            setIsFavorite(response.data);
-            toast(`${entry.title} ${isFavorite ? "saved to" : "removed from"} favorites`);
-        } catch (e) {
-            console.log("Error saving entry to favorites");
-            // TODO: display login modal
-        }
-
-    }
-
-    function copyToClipboard(){
-        navigator.clipboard.writeText(entry.code).then(function() {
-            /* clipboard successfully set */
-            toast.success("Code copied to clipboard",
+            toast.success(`${entry.title} ${response.data ? "saved to" : "removed from"} favorites`,
                 {
                     style: {
                         border: 'solid 1px #6EE7B750',
@@ -53,19 +58,12 @@ export default function TabbedView({isLoggedIn,userFavorites,entry,allowEdit,edi
                         boxShadow: "none",
                     },
                 });
-        }, function() {
-            /* clipboard write failed */
-            toast.error("Unable to copy code to clipboard",
-            {
-                style: {
-                    border: 'solid 1px #DC262650',
-                    borderRadius: '10px',
-                    background: '#111827',
-                    color: '#EF4444',
-                    boxShadow: "none",
-                },
-            });
-        });
+            setIsFavorite(response.data);
+
+        } catch (e) {
+            console.log("Error saving entry to favorites");
+        }
+
     }
 
     return (
@@ -91,12 +89,7 @@ export default function TabbedView({isLoggedIn,userFavorites,entry,allowEdit,edi
                                     </Tab>
                                 ))}
                             </Tab.List>
-                            <button
-                                onClick={(_) => copyToClipboard()}
-                                className="border border-green-700 font-bold text-green-700 dark:text-green-500 dark:border-green-500 py-1.5 px-4 my-2.5 rounded-lg">
-                                Copy
-                            </button>
-                                {allowEdit && <div className="my-2"><EditMenu entryId={entry.id} onEdit={editHandler} onDelete={deleteEntry}/></div>}
+                            {allowEdit && <div className="my-2"><EditMenu entryId={entry.id} onEdit={editHandler} onDelete={deleteEntry}/></div>}
                         </div>
 
                     </div>
@@ -117,17 +110,17 @@ export default function TabbedView({isLoggedIn,userFavorites,entry,allowEdit,edi
             </Tab.Group>
 
             <div className="flex justify-between">
-                <div className="flex text-green-700 dark:text-green-300 text-lg">
+                <div className="flex text-lg">
                     {isLoggedIn && <button
                         onClick={favoriteEntry}
-                        className="hover:bg-black hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10 p-2 rounded-full">
-                        {isFavorite ? <HiHeart/> : <HiOutlineHeart/>}</button>}
+                        className="hover:bg-black hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10 p-2 rounded-full text-green-700 dark:text-green-300">
+                        {isFavorite ? <HiHeart className="text-green-700 dark:text-green-300"/> : <HiOutlineHeart className="text-gray-500"/>}</button>}
                     <button
-                        onClick={_ =>likeDislikeEntry(true)}
-                        className="flex items-center space-x-2 hover:bg-black hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10 px-2 rounded-full"><p>0</p><HiThumbUp/></button>
+                        onClick={_ => like()}
+                        className="flex items-center space-x-2 hover:bg-black hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10 px-2 rounded-full"><HiThumbUp className={`${isLike ? "text-green-700 dark:text-green-300" : "text-gray-700 dark:text-gray-300"}`}/></button>
                     <button
-                        onClick={_ => likeDislikeEntry(false)}
-                        className="flex items-center space-x-2 hover:bg-black hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10 px-2 rounded-full"><p>0</p><HiThumbDown className=""/></button>
+                        onClick={_ => dislike()}
+                        className="flex items-center space-x-2 hover:bg-black hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10 px-2 rounded-full"><HiThumbDown className={`${isDislike ? "text-green-700 dark:text-green-300" : "text-gray-700 dark:text-gray-300"}`}/></button>
                 </div>
                 <div className="flex space-x-1">
                     <button

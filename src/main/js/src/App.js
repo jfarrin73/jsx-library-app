@@ -72,7 +72,7 @@ function App() {
     const [isEditEntryModalOpen, setIsEditEntryModalOpen] = useState(false);
     const [activeEntry, setActiveEntry] = useState(EMPTY_ENTRY)
     const [searchText, setSearchText] = useState("");
-    const [userFavorites, setUserFavorites] = useState([]);
+    const [userData, setUserData] = useState({username:"", favoriteIds:[], likesDislikes:[]});
     const [isUserData, setIsUserData] = useState(false);
     const [isFavoritesSelected, setIsFavoritesSelected] = useState(false);
 
@@ -84,7 +84,7 @@ function App() {
         DataService.getCurrentUserData().then(r =>{
             if (r.status === 200){
                 setIsLoggedIn(true);
-                setUserFavorites(r.data.favoriteIds);
+                setUserData(r.data);
             }
         });
     },[]);
@@ -100,12 +100,12 @@ function App() {
     async function login(user){
         try{
             const loginResponse = await DataService.login(user);
-            console.log("User Login")
-            setIsLoggedIn(true);
-            console.log(loginResponse.data);
-            setUserFavorites(loginResponse.data.favoriteIds);
-            const token = loginResponse.headers["jwt-token"];
-            localStorage.setItem("token", JSON.stringify(token));
+            if(loginResponse.status === 200){
+                setIsLoggedIn(true);
+                setUserData(loginResponse.data);
+                const token = loginResponse.headers["jwt-token"];
+                localStorage.setItem("token", JSON.stringify(token));
+            }
         } catch (e){
             return Promise.reject(e.response.data);
         }
@@ -114,12 +114,11 @@ function App() {
     function logout(){
         DataService.ClearStorage();
         setIsLoggedIn(false);
-        setUserFavorites([]);
+        setUserData({username:"", favoriteIds:[], likesDislikes:[]});
     }
 
     async function register(user){
         try{
-            console.log("App register: " + user.username);
             await DataService.register(user);
         } catch (e){
             // TODO: need to reject promise?
@@ -154,7 +153,7 @@ function App() {
         console.log("applyCategoryFilter. selection parameter: " + selection);
         setSelectedView(selection);
         if (isFavoritesSelected){
-            setData(selection === ALL ? dataCache.filter(y => userFavorites.includes(y.id)) : dataCache.filter(x => x.category === selection).filter(y => userFavorites.includes(y.id)));
+            setData(selection === ALL ? dataCache.filter(y => userData.favoriteIds.includes(y.id)) : dataCache.filter(x => x.category === selection).filter(y => userData.favoriteIds.includes(y.id)));
         } else {
             setData(selection === ALL ? dataCache : dataCache.filter(x => x.category === selection));
         }
@@ -260,7 +259,7 @@ function App() {
                 <div className="flex flex-col space-y-4 items-center w-3/4 lg:w-5/6">
                     {data.length === 0
                         ? <h2 className="text-2xl dark:text-gray-200 pt-7">{getEmptyMessage()}</h2>
-                        : data.map((entry) => <TabbedView isLoggedIn={isLoggedIn} userFavorites={userFavorites} entry={entry} allowEdit={isUserData} editEntry={editEntry} key={entry.id} deleteEntry={deleteEntry}/>)}
+                        : data.map((entry) => <TabbedView isLoggedIn={isLoggedIn} userData={userData} entry={entry} allowEdit={isUserData} editEntry={editEntry} key={entry.id} deleteEntry={deleteEntry}/>)}
                 </div>
 
                 {/*SPACER TO KEEP EVERYTHING ELSE CENTERED*/}

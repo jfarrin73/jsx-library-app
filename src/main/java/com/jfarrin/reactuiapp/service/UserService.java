@@ -5,12 +5,13 @@ import com.jfarrin.reactuiapp.exceptions.EmailExistException;
 import com.jfarrin.reactuiapp.exceptions.EmailNotFoundException;
 import com.jfarrin.reactuiapp.exceptions.UserNotFoundException;
 import com.jfarrin.reactuiapp.exceptions.UsernameExistException;
+import com.jfarrin.reactuiapp.model.UserData;
 
 import java.util.List;
 
 public interface UserService {
 
-    String register (String firstName, String lastName, String username, String email) throws EmailExistException, UsernameExistException, UserNotFoundException;
+    User register (String username, String email, String password) throws EmailExistException, UsernameExistException, UserNotFoundException;
 
     List<User> getUsers();
 
@@ -21,6 +22,8 @@ public interface UserService {
     User addNewUser(String firstName, String lastName, String username, String email, String role, boolean isNotLocked, boolean isActive) throws UserNotFoundException, EmailExistException, UsernameExistException;
 
     User updateUser(String currentUsername, String newFirstName, String newLastName, String newUsername, String newEmail, String role, boolean isNotLocked, boolean isActive) throws UserNotFoundException, EmailExistException, UsernameExistException;
+
+    void updateUserData(UserData userData);
 
     void deleteUser(Long id);
 
