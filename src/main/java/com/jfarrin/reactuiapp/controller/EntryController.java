@@ -37,10 +37,8 @@ public class EntryController {
     }
 
     @GetMapping
-    public Iterable<Entry> getAllEntries(@RequestParam(defaultValue = "",required = false) String category){
-        return category.equals(StringUtils.EMPTY)
-                ? this.repository.findAll(defaultSort)
-                : this.repository.findAllByCategory(category, defaultSort);
+    public Iterable<Entry> getAllEntries(){
+        return this.repository.findAll(defaultSort);
     }
 
     @GetMapping("/user")

@@ -20,8 +20,7 @@ import java.util.List;
 
 import static com.jfarrin.reactuiapp.constant.SecurityConstant.JWT_TOKEN_HEADER;
 import static com.jfarrin.reactuiapp.constant.SecurityConstant.TOKEN_PREFIX;
-import static org.springframework.http.HttpStatus.NO_CONTENT;
-import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.*;
 
 @RestController
 @RequestMapping(path = "/user")
@@ -41,7 +40,7 @@ public class UserController extends ExceptionHandling {
 
     @PostMapping("/register")
     public ResponseEntity<User> register(@RequestBody User user) throws UserNotFoundException, UsernameExistException, EmailExistException {
-        return new ResponseEntity<>(userService.register(user.getUsername(), user.getEmail(), user.getPassword()),OK);
+        return new ResponseEntity<>(userService.register(user.getUsername(), user.getEmail(), user.getPassword()),CREATED);
     }
 
     @PostMapping("/login")
