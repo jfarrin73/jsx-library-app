@@ -1,14 +1,15 @@
 package com.jfarrin.reactuiapp.controller;
 
-import com.jfarrin.reactuiapp.model.Entry;
-import com.jfarrin.reactuiapp.model.User;
-import com.jfarrin.reactuiapp.model.UserData;
+import com.jfarrin.reactuiapp.dto.EntryListDto;
+import com.jfarrin.reactuiapp.dto.UserDataDto;
+import com.jfarrin.reactuiapp.dto.UserEntryDto;
+import com.jfarrin.reactuiapp.model.*;
 import com.jfarrin.reactuiapp.repository.EntryRepository;
-import com.jfarrin.reactuiapp.repository.UserRepository;
+import com.jfarrin.reactuiapp.repository.VoteRepository;
 import com.jfarrin.reactuiapp.service.UserService;
 import com.jfarrin.reactuiapp.utility.JwtTokenProvider;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.jfarrin.reactuiapp.constant.SecurityConstant.TOKEN_PREFIX;
 
@@ -28,28 +30,34 @@ public class EntryController {
 
     private final EntryRepository repository;
     private final UserService userService;
+    private final VoteRepository voteRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
-    public EntryController(EntryRepository repository, UserService userService, JwtTokenProvider jwtTokenProvider) {
+    public EntryController(EntryRepository repository, UserService userService, VoteRepository voteRepository, JwtTokenProvider jwtTokenProvider) {
         this.repository = repository;
         this.userService = userService;
+        this.voteRepository = voteRepository;
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @GetMapping
-    public Iterable<Entry> getAllEntries(){
-        return this.repository.findAll(defaultSort);
+    public EntryListDto getAllEntries(@RequestParam int pageNumber, @RequestParam(required = true,defaultValue = "10") int itemsPerPage){
+        Page<Entry> page = this.repository.findAll(PageRequest.of(pageNumber,itemsPerPage,defaultSort));
+        return new EntryListDto(page.getTotalPages(),page.getContent());
     }
 
     @GetMapping("/user")
-    public Iterable<Entry> getAllUserEntries(@RequestHeader String authorization){
-        return this.repository.findAllByCreatedBy(getCurrentUserName(authorization), defaultSort);
+    public EntryListDto getAllUserEntries(@RequestHeader String authorization,
+                                          @RequestParam int pageNumber,
+                                          @RequestParam(defaultValue = "10") int itemsPerPage){
+        Page<Entry> page = this.repository.findAllByCreatedBy(getCurrentUserName(authorization), PageRequest.of(pageNumber,itemsPerPage, defaultSort));
+        return new EntryListDto(page.getTotalPages(),page.getContent());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Entry> getEntryById(@PathVariable Long id){
-        Optional<Entry> optional = this.repository.findById(id);
-        return new ResponseEntity<>(optional.orElse(null),HttpStatus.OK);
+    @GetMapping("/favorites")
+    public Iterable<Entry> getAllUserFavorites(@RequestHeader String authorization){
+        System.out.println("favorites length: " + userService.findUserByUsername(getCurrentUserName(authorization)).getFavorites().size());
+        return userService.findUserByUsername(getCurrentUserName(authorization)).getFavorites();
     }
 
     @PostMapping("/create")
@@ -65,8 +73,10 @@ public class EntryController {
     public ResponseEntity<Entry> updateEntryById(@RequestHeader String authorization, @PathVariable Long id, @RequestBody Entry newEntry){
         if (getCurrentUserName(authorization).equals(newEntry.getCreatedBy())) {
             Optional<Entry> optional = this.repository.findById(id);
-            optional.ifPresent(entry -> this.repository.save(entry.UpdateEntry(newEntry)));
-            return new ResponseEntity<>(optional.orElse(null),HttpStatus.OK);
+            if (optional.isPresent()) {
+                this.repository.save(optional.get().UpdateEntry(newEntry));
+                return new ResponseEntity<>(optional.get(), HttpStatus.OK);
+            }
         }
         // User is somehow trying to patch an entry not created by them
         return new ResponseEntity<>(null,HttpStatus.OK);
@@ -76,63 +86,78 @@ public class EntryController {
     @PreAuthorize("hasAnyAuthority('user:create')")
     public ResponseEntity<Boolean> FavoriteEntryById(@RequestHeader String authorization, @PathVariable Long id){
         User user = userService.findUserByUsername(getCurrentUserName(authorization));
-        if (user != null){
-            List<Long> favorites = new ArrayList<>(Arrays.asList(user.getFavoriteIds() == null ? new Long[]{} : user.getFavoriteIds()));
-            boolean isRemove = favorites.contains(id);
-            if (isRemove){
-                favorites.remove(id);
-            } else {
-                favorites.add(id);
+        Entry entry = repository.findById(id).orElse(null);
+        if (entry != null){
+            Optional<Entry> favorite = user.getFavorites().stream().filter(x -> x.getId().equals(id)).findFirst();
+            if (favorite.isPresent()){
+                user.getFavorites().remove(favorite.get());
+            }else{
+                user.getFavorites().add(entry);
             }
-            userService.updateUserData(
-                    new UserData(user.getUsername(), favorites.toArray(new Long[favorites.size()]), user.getLikesDislikes()));
-            return new ResponseEntity<>(!isRemove,HttpStatus.OK);
+            userService.updateUserData(new UserDataDto(user.getUsername(), new ArrayList<>(), new ArrayList<>(), user.getFavorites()));
+            return new ResponseEntity<>(favorite.isEmpty(),HttpStatus.OK);
         }
         return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
     }
 
     @PatchMapping("/like/{id}")
     @PreAuthorize("hasAnyAuthority('user:create')")
-    public ResponseEntity<Boolean> likeEntryById(@RequestHeader String authorization, @PathVariable Long id){
+    public ResponseEntity<UserEntryDto> likeEntryById(@RequestHeader String authorization, @PathVariable Long id){
         User user = userService.findUserByUsername(getCurrentUserName(authorization));
         if (user != null){
-            return new ResponseEntity<>(updateVote(user,id),HttpStatus.OK);
+            Entry entry = repository.findById(id).orElse(null);
+            Vote vote = voteRepository.findByUserAndEntry(user,entry).stream().findFirst().orElse(null);
+            if (vote == null){
+                vote = new Vote(user,entry);
+            }
+            switch (Objects.requireNonNull(vote).getValue()){
+                case LIKE -> {
+                    vote.setValue(VoteOption.NONE);
+                }
+                case DISLIKE, NONE -> {
+                    vote.setValue(VoteOption.LIKE);
+                }
+            }
+            return getUserEntryDtoResponseEntity(entry, vote);
         }
         return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
     }
 
     @PatchMapping("/dislike/{id}")
     @PreAuthorize("hasAnyAuthority('user:create')")
-    public ResponseEntity<Boolean> dislikeEntryById(@RequestHeader String authorization, @PathVariable Long id){
-        System.out.println("id: " + id);
-        System.out.println(getCurrentUserName(authorization));
+    public ResponseEntity<UserEntryDto> dislikeEntryById(@RequestHeader String authorization, @PathVariable Long id){
         User user = userService.findUserByUsername(getCurrentUserName(authorization));
-        System.out.println("user: " + user);
         if (user != null){
-            return new ResponseEntity<>(updateVote(user,-id),HttpStatus.OK);
+            Entry entry = repository.findById(id).orElse(null);
+            Vote vote = voteRepository.findByUserAndEntry(user,entry).stream().findFirst().orElse(null);
+            if (vote == null){
+                vote = new Vote(user,entry);
+            }
+            switch (Objects.requireNonNull(vote).getValue()){
+                case DISLIKE -> {
+                    vote.setValue(VoteOption.NONE);
+                }
+                case LIKE, NONE -> {
+                    vote.setValue(VoteOption.DISLIKE);
+                }
+            }
+            return getUserEntryDtoResponseEntity(entry, vote);
         }
         return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
     }
 
-    private boolean updateVote(User user,Long id){
-        boolean isExists = true;
-        List<Long> votes = new ArrayList<>(Arrays.asList(user.getLikesDislikes() == null ? new Long[]{} : user.getLikesDislikes()));
-        System.out.println(votes);
-        // id found, remove it
-        if (votes.contains(id)) {
-            votes.remove(id);
-            isExists = false;
-        }
-        // Opposite id found, flip it
-        else if (votes.contains(-id)) votes.set(votes.indexOf(-id),id);
-            // No id found, add it
-        else votes.add(id);
+    private ResponseEntity<UserEntryDto> getUserEntryDtoResponseEntity(Entry entry, Vote vote) {
+        voteRepository.save(vote);
 
-        System.out.println("here");
+        List<Vote> entryVotes = voteRepository.findByEntry(entry);
 
-        userService.updateUserData(new UserData(user.getUsername(), user.getFavoriteIds(), votes.toArray(new Long[votes.size()])));
-        return isExists;
+        entry.setTotalLikes(entryVotes.stream().filter(x -> x.getValue().equals(VoteOption.LIKE)).count());
+        entry.setTotalDislikes(entryVotes.stream().filter(x -> x.getValue().equals(VoteOption.DISLIKE)).count());
+        repository.save(entry);
+
+        return new ResponseEntity<>(new UserEntryDto(vote.getValue().equals(VoteOption.LIKE), vote.getValue().equals(VoteOption.DISLIKE), entry.getTotalLikes(),entry.getTotalDislikes()), HttpStatus.OK);
     }
+
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('user:create')")

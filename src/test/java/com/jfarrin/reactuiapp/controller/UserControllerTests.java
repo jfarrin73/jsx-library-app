@@ -130,8 +130,7 @@ public class UserControllerTests {
                         .content(mapper.writeValueAsString(user)))
                 .andExpect(status().isOk())
                 .andExpect(header().exists(JWT_TOKEN_HEADER))
-                .andExpect(jsonPath("$.username", equalTo(USERNAME)))
-                .andExpect(jsonPath("$.email", equalTo(EMAIL)));
+                .andExpect(jsonPath("$.username", equalTo(USERNAME)));
     }
 
     @Transactional

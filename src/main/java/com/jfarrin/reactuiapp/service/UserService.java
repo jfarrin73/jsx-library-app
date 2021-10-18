@@ -5,7 +5,7 @@ import com.jfarrin.reactuiapp.exceptions.EmailExistException;
 import com.jfarrin.reactuiapp.exceptions.EmailNotFoundException;
 import com.jfarrin.reactuiapp.exceptions.UserNotFoundException;
 import com.jfarrin.reactuiapp.exceptions.UsernameExistException;
-import com.jfarrin.reactuiapp.model.UserData;
+import com.jfarrin.reactuiapp.dto.UserDataDto;
 
 import java.util.List;
 
@@ -23,7 +23,7 @@ public interface UserService {
 
     User updateUser(String currentUsername, String newFirstName, String newLastName, String newUsername, String newEmail, String role, boolean isNotLocked, boolean isActive) throws UserNotFoundException, EmailExistException, UsernameExistException;
 
-    void updateUserData(UserData userData);
+    void updateUserData(UserDataDto userData);
 
     void deleteUser(Long id);
 

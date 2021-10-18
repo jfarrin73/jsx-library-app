@@ -1,6 +1,6 @@
 import {Fragment, useEffect, useState} from 'react'
 import {Listbox, Transition} from '@headlessui/react'
-import {HiSelector,HiOutlineSearch} from "react-icons/hi";
+import {HiSelector} from "react-icons/hi";
 
 export default function Picker({options,initialValue, onSelectionChanged}) {
     const [selected, setSelected] = useState(options[0])

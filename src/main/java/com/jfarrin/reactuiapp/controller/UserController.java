@@ -1,10 +1,9 @@
 package com.jfarrin.reactuiapp.controller;
 
-import com.jfarrin.reactuiapp.model.HttpResponse;
-import com.jfarrin.reactuiapp.model.User;
-import com.jfarrin.reactuiapp.model.UserData;
-import com.jfarrin.reactuiapp.model.UserPrincipal;
+import com.jfarrin.reactuiapp.dto.UserDataDto;
+import com.jfarrin.reactuiapp.model.*;
 import com.jfarrin.reactuiapp.exceptions.*;
+import com.jfarrin.reactuiapp.repository.VoteRepository;
 import com.jfarrin.reactuiapp.service.UserService;
 import com.jfarrin.reactuiapp.utility.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +15,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.jfarrin.reactuiapp.constant.SecurityConstant.JWT_TOKEN_HEADER;
 import static com.jfarrin.reactuiapp.constant.SecurityConstant.TOKEN_PREFIX;
@@ -30,12 +31,14 @@ public class UserController extends ExceptionHandling {
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final VoteRepository voteRepository;
 
     @Autowired
-    public UserController(AuthenticationManager authenticationManager, UserService userService, JwtTokenProvider jwtTokenProvider) {
+    public UserController(AuthenticationManager authenticationManager, UserService userService, JwtTokenProvider jwtTokenProvider, VoteRepository voteRepository) {
         this.authenticationManager = authenticationManager;
         this.userService = userService;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.voteRepository = voteRepository;
     }
 
     @PostMapping("/register")
@@ -44,12 +47,12 @@ public class UserController extends ExceptionHandling {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<User> login(@RequestBody User user) {
+    public ResponseEntity<UserDataDto> login(@RequestBody User user) {
         authenticate(user.getUsername(), user.getPassword()); // If this fails, the rest of the method will not continue
         User loginUser = userService.findUserByUsername(user.getUsername());
         UserPrincipal userPrincipal = new UserPrincipal(loginUser);
         HttpHeaders jwtHeader = getJwtHeader(userPrincipal);
-        return new ResponseEntity<>(loginUser, jwtHeader, OK);
+        return new ResponseEntity<>(getUserDataDto(loginUser.getUsername()), jwtHeader, OK);
     }
 
     @PostMapping("/add")
@@ -85,11 +88,9 @@ public class UserController extends ExceptionHandling {
 
     @GetMapping("/current")
     @PreAuthorize("hasAnyAuthority('user:read')")
-    public ResponseEntity<UserData> getCurrentUserData(@RequestHeader String authorization){
+    public ResponseEntity<UserDataDto> getCurrentUserData(@RequestHeader String authorization){
         String username = jwtTokenProvider.getSubject(authorization.substring(TOKEN_PREFIX.length()));
-        User user = userService.findUserByUsername(username);
-        UserData userData = new UserData(username, user.getFavoriteIds(), user.getLikesDislikes());
-        return new ResponseEntity<>(userData,OK);
+        return new ResponseEntity<>(getUserDataDto(username),OK);
     }
 
     @GetMapping("/list")
@@ -123,5 +124,13 @@ public class UserController extends ExceptionHandling {
 
     private void authenticate(String username, String password) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+    }
+
+    private UserDataDto getUserDataDto(String username){
+        User user = userService.findUserByUsername(username);
+        List<Vote> userVotes = voteRepository.findByUser(user);
+        List<Long> likeIds = userVotes.stream().filter(x -> x.getValue().equals(VoteOption.LIKE)).map(v -> v.getEntry().getId()).collect(Collectors.toList());
+        List<Long> dislikeIds = userVotes.stream().filter(x -> x.getValue().equals(VoteOption.DISLIKE)).map(v -> v.getEntry().getId()).collect(Collectors.toList());
+        return new UserDataDto(username, likeIds, dislikeIds, user.getFavorites());
     }
 }

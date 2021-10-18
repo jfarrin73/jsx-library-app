@@ -1,5 +1,6 @@
 package com.jfarrin.reactuiapp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,12 +24,24 @@ public class Entry {
     private String createdBy;
     private String category;
 
+    @JsonIgnore
+    @ManyToMany
+    private List<User> favoritedBy;
+
+    private long totalLikes;
+    private long totalDislikes;
+
     public Entry UpdateEntry(Entry newEntry){
-        title = newEntry.title;
-        description = newEntry.description;
-        code = newEntry.code;
-        isPrivate = newEntry.isPrivate;
-        category = newEntry.category;
+        this.title = newEntry.title;
+        this.description = newEntry.description;
+        this.code = newEntry.code;
+        this.isPrivate = newEntry.isPrivate;
+        this.createdBy = newEntry.createdBy;
+        this.category = newEntry.category;
+        this.favoritedBy = newEntry.favoritedBy;
+        this.totalDislikes = newEntry.totalDislikes;
+        this.totalLikes = newEntry.totalLikes;
+
         return newEntry;
     }
 }

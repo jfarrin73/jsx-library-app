@@ -2,13 +2,11 @@ import { Dialog, Transition } from '@headlessui/react'
 import {Fragment, useRef, useState} from 'react'
 import {useForm} from "react-hook-form";
 
-export default function RegisterModal({handleRegister}) {
+export default function RegisterModal({handleRegister, isOpen, setIsOpen}) {
     const [errorMessage, setErrorMessage] = useState("");
     const {register, handleSubmit, watch, reset, formState: {errors}} = useForm({mode: 'onChange'});
     const password = useRef({});
     password.current = watch("password", "");
-
-    let [isOpen, setIsOpen] = useState(false);
 
     const onSubmit = async (data) => {
         try {

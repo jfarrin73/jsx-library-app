@@ -8,7 +8,8 @@ import lombok.Setter;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
-import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -34,6 +35,6 @@ public class User implements Serializable {
     private boolean isActive;
     private boolean isNotLocked;
 
-    private Long[] favoriteIds;
-    private Long[] likesDislikes;
+    @ManyToMany
+    private List<Entry> favorites;
 }

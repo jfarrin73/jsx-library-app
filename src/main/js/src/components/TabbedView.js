@@ -1,7 +1,7 @@
 import { Tab } from '@headlessui/react'
 import Preview from "./Preview";
 import CodeBlockComponent from "./CodeBlockComponent";
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import EditMenu from "./EditMenu";
 import toast, { Toaster } from 'react-hot-toast';
 import {HiHeart, HiThumbUp, HiThumbDown, HiOutlineHeart} from "react-icons/hi";
@@ -11,17 +11,24 @@ function classNames(...classes) {
     return classes.filter(Boolean).join(' ')
 }
 
-export default function TabbedView({isLoggedIn,userData,entry,allowEdit,editEntry,deleteEntry}) {
+export default function TabbedView({isLoggedIn,setIsLoginModalOpen,userData,setUserData,entry,allowEdit,editEntry,deleteEntry}) {
 
     const [isFavorite, setIsFavorite] = useState(false);
-    const [isLike, setIsLike] = useState(false);
-    const [isDislike, setIsDislike] = useState(false);
+
+    const [likeData, setLikeData] = useState({})
 
     useEffect(() => {
-        setIsFavorite(userData.favoriteIds && userData.favoriteIds.includes(entry.id));
-        setIsLike(userData.likesDislikes && userData.likesDislikes.includes(entry.id));
-        setIsDislike(userData.likesDislikes && userData.likesDislikes.includes(-entry.id));
-    }, [userData.favoriteIds])
+        setIsFavorite(userData.favorites && userData.favorites.some( x => x.id === entry.id));
+    }, [userData.favorites])
+
+    useEffect(() => {
+        console.log("user data change");
+        setLikeData({
+            "like": userData.likes && userData.likes.some(x => x === entry.id),
+            "dislike": userData.dislikes && userData.dislikes.some(x => x === entry.id),
+            "totalLikes": entry.totalLikes,
+            "totalDislikes": entry.totalDislikes})
+    },[isLoggedIn,userData]);
 
     function editHandler(event){
         event.preventDefault();
@@ -29,20 +36,21 @@ export default function TabbedView({isLoggedIn,userData,entry,allowEdit,editEntr
     }
 
     async function like(){
-        console.log("entry Id: " + entry.id);
-        const result = await DataService.likeEntry(entry);
-        console.log(result);
-        console.log("like: " + entry.id);
-        console.log("result: " + result.data);
-        setIsLike(result.data);
-        if (result.data) setIsDislike(false);
+        if (isLoggedIn){
+            const result = await DataService.likeEntry(entry);
+            setLikeData(result.data);
+        } else {
+            setIsLoginModalOpen(true);
+        }
     }
+
     async function dislike(){
-        const result = (await DataService.dislikeEntry(entry)).data;
-        console.log("dislike: " + entry.id);
-        console.log("result: " + result);
-        setIsDislike(result);
-        if (result) setIsLike(false);
+        if (isLoggedIn){
+            const result = await DataService.dislikeEntry(entry);
+            setLikeData(result.data);
+        } else {
+            setIsLoginModalOpen(true);
+        }
     }
 
     async function favoriteEntry(_){
@@ -59,6 +67,14 @@ export default function TabbedView({isLoggedIn,userData,entry,allowEdit,editEntr
                     },
                 });
             setIsFavorite(response.data);
+
+            const newData = userData;
+            if (response.data){
+                newData.favorites.push(entry);
+            } else {
+                newData.favorites.splice(newData.favorites.indexOf(entry),1);
+            }
+            setUserData(newData);
 
         } catch (e) {
             console.log("Error saving entry to favorites");
@@ -117,16 +133,16 @@ export default function TabbedView({isLoggedIn,userData,entry,allowEdit,editEntr
                         {isFavorite ? <HiHeart className="text-green-700 dark:text-green-300"/> : <HiOutlineHeart className="text-gray-500"/>}</button>}
                     <button
                         onClick={_ => like()}
-                        className="flex items-center space-x-2 hover:bg-black hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10 px-2 rounded-full"><HiThumbUp className={`${isLike ? "text-green-700 dark:text-green-300" : "text-gray-700 dark:text-gray-300"}`}/></button>
+                        className="flex items-center space-x-2 hover:bg-black hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10 px-2 rounded-full"><p className="text-gray-500">{likeData.totalLikes}</p><HiThumbUp className={`${likeData.like ? "text-green-700 dark:text-green-300" : "text-gray-500 dark:text-gray-500"}`}/></button>
                     <button
                         onClick={_ => dislike()}
-                        className="flex items-center space-x-2 hover:bg-black hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10 px-2 rounded-full"><HiThumbDown className={`${isDislike ? "text-green-700 dark:text-green-300" : "text-gray-700 dark:text-gray-300"}`}/></button>
+                        className="flex items-center space-x-2 hover:bg-black hover:bg-opacity-10 dark:hover:bg-white dark:hover:bg-opacity-10 px-2 rounded-full"><p className="text-gray-500">{likeData.totalDislikes}</p><HiThumbDown className={`${likeData.dislike ? "text-green-700 dark:text-green-300" : "text-gray-500 dark:text-gray-500"}`}/></button>
                 </div>
                 <div className="flex space-x-1">
                     <button
                         className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 pb-0.5 rounded-md">{entry.category}</button>
                     <button
-                        onClick={() => alert("Someday this might show you more components by this user")}
+                        onClick={() => toast("Coming soon")}
                         className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 pb-0.5 rounded-md">{entry.createdBy}</button>
                 </div>
             </div>

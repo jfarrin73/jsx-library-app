@@ -26,12 +26,14 @@ const getToken = () => {
 
 class DataService {
 
-    retrieveAllEntries(category, byUsername) {
-        if (byUsername){
-            return axios.get(ENTRIES + `/user`, {headers: {Authorization: `Bearer ${getToken()}`}});
+    retrieveAllEntries(pageNumber = 0, isUserData = false, isFavorites) {
+        if (isUserData){
+            return axios.get(ENTRIES + `/user?pageNumber=${pageNumber}`, {headers: {Authorization: `Bearer ${getToken()}`}});
         }
-
-        return axios.get(ENTRIES + `?category=${category}`);
+        if (isFavorites){
+            return axios.get(ENTRIES + `/favorites`, {headers: {Authorization: `Bearer ${getToken()}`}});
+        }
+        return axios.get(ENTRIES + `?pageNumber=${pageNumber}`);
     }
 
     retrieveEntry(id) {

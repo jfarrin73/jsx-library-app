@@ -12,6 +12,7 @@ import {HiOutlineSearch, HiX, HiLibrary, HiHeart} from "react-icons/hi";
 import { GiPiranha } from "react-icons/gi";
 import Fuse from 'fuse.js'
 import Picker from "./components/Picker";
+// import toast from "react-hot-toast";
 
 const ALL = "All";
 const MY_COMPONENTS = "My Components";
@@ -39,7 +40,9 @@ const EMPTY_ENTRY = {
     "id":"",
     "createdBy":"",
     "created":"",
-    "category":""
+    "category":"",
+    "totalLikes": 0,
+    "totalDislikes": 0,
 }
 
 const searchOptions = {
@@ -64,6 +67,9 @@ const searchOptions = {
 
 function App() {
 
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    let [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+
     const [data, setData] = useState([]);
     const [dataCache, setDataCache] = useState([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -72,9 +78,11 @@ function App() {
     const [isEditEntryModalOpen, setIsEditEntryModalOpen] = useState(false);
     const [activeEntry, setActiveEntry] = useState(EMPTY_ENTRY)
     const [searchText, setSearchText] = useState("");
-    const [userData, setUserData] = useState({username:"", favoriteIds:[], likesDislikes:[]});
+    const [userData, setUserData] = useState({username:"", likes:[], dislikes: [], favorites:[]});
     const [isUserData, setIsUserData] = useState(false);
     const [isFavoritesSelected, setIsFavoritesSelected] = useState(false);
+    const [page, setPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
 
     const NO_USER_COMPONENTS_MESSAGE = "You have not created any components";
     const NO_COMPONENTS_MESSAGE = "No components have been added yet";
@@ -89,11 +97,19 @@ function App() {
         });
     },[]);
 
-    useEffect(() => loadData(),[]);
+    useEffect(() => {
+        loadData()
+    },[page,isUserData,isFavoritesSelected]);
 
     useEffect(() => {
         applyCategoryFilter(selectedView);
     }, [selectedView, dataCache, isFavoritesSelected])
+
+    const handleScroll = (e) => {
+        if (e.target.clientHeight + e.target.scrollTop === e.target.scrollHeight && page < totalPages - 1) {
+            setPage(page + 1);
+        }
+    };
 
     let fuse = new Fuse(data,searchOptions);
 
@@ -114,23 +130,21 @@ function App() {
     function logout(){
         DataService.ClearStorage();
         setIsLoggedIn(false);
-        setUserData({username:"", favoriteIds:[], likesDislikes:[]});
+        setUserData({username:"", likes: [], dislikes: [], favorites: []});
     }
 
     async function register(user){
         try{
             await DataService.register(user);
         } catch (e){
-            // TODO: need to reject promise?
-            // await Promise.reject(e.response.data);
-            return e.response.data.message;
+            await Promise.reject(e.response.data);
         }
     }
 
     async function addNewEntry(newEntry){
         console.log("New Entry Added");
         await DataService.createEntry(newEntry);
-        loadData(selectedView);
+        loadData();
     }
 
     function editEntry(entry){
@@ -151,27 +165,33 @@ function App() {
 
     function applyCategoryFilter(selection){
         console.log("applyCategoryFilter. selection parameter: " + selection);
+        setSearchText("");
         setSelectedView(selection);
-        if (isFavoritesSelected){
-            setData(selection === ALL ? dataCache.filter(y => userData.favoriteIds.includes(y.id)) : dataCache.filter(x => x.category === selection).filter(y => userData.favoriteIds.includes(y.id)));
-        } else {
-            setData(selection === ALL ? dataCache : dataCache.filter(x => x.category === selection));
-        }
-    }
-
-    function loadData(isUserData = false) {
-        isUserData = isUserData || false;
-        console.log("Load Data");
-        DataService.retrieveAllEntries("", isUserData).then(response => {
-            setDataCache((response.data));
-        });
+        setData(selection === ALL ? dataCache : dataCache.filter(x => x.category === selection));
     }
 
     function menuSelected(selected){
         console.log("Menu Selected. selected: " + selected);
+        setPage(0);
         setIsUserData(selected === menu[1].name);
         setIsFavoritesSelected(selected === menu[2].name)
-        loadData(selected === menu[1].name); // My Components
+    }
+
+    function loadData() {
+        console.log(`load data. page: ${page} isUserData: ${isUserData} isFavorites: ${isFavoritesSelected}`);
+
+        DataService.retrieveAllEntries(page,isUserData, isFavoritesSelected).then(response => {
+            console.log(response.data);
+            if (isFavoritesSelected){
+                setTotalPages(0);
+                console.log("favorites: " + response.data);
+                setDataCache(response.data);
+            } else {
+                setTotalPages(response.data.totalPages);
+                setDataCache(page !== 0 ? dataCache.concat(response.data.entries) : response.data.entries);
+            }
+        });
+
     }
 
     function searchTextChange(event){
@@ -181,14 +201,13 @@ function App() {
         console.log(fuse.search(event.target.value));
 
         if (event.target.value === ""){
-            loadData(selectedView);
+            setData(dataCache);
         }else{
             setData(fuse.search(event.target.value).map(a => a.item));
         }
     }
 
     function getEmptyMessage(){
-        console.log("Get Empty Message");
         if (selectedView === ALL){
             return NO_COMPONENTS_MESSAGE;
         } else if (selectedView === MY_COMPONENTS){
@@ -239,12 +258,12 @@ function App() {
                                 Log Out
                             </button>
                         </div>
-                        : <div className="flex space-x-2"><RegisterModal handleRegister={register}/> <LoginModal handleLogin={login}/></div>}
+                        : <div className="flex space-x-2"><RegisterModal handleRegister={register} isOpen={isRegisterModalOpen} setIsOpen={setIsRegisterModalOpen}/> <LoginModal handleLogin={login} isOpen={isLoginModalOpen} setIsOpen={setIsLoginModalOpen} setIsRegisterModalOpen={setIsRegisterModalOpen} /></div>}
                     <ThemeButton isDarkTheme={true}/>
                 </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto space-x-4 flex pt-4 px-4">
+            <div onScroll={handleScroll} className="flex-1 overflow-y-auto space-x-4 flex pt-4 px-4">
 
                 {/*SIDEBAR*/}
                 <div className="top-0 sticky w-full max-w-xs">
@@ -259,7 +278,7 @@ function App() {
                 <div className="flex flex-col space-y-4 items-center w-3/4 lg:w-5/6">
                     {data.length === 0
                         ? <h2 className="text-2xl dark:text-gray-200 pt-7">{getEmptyMessage()}</h2>
-                        : data.map((entry) => <TabbedView isLoggedIn={isLoggedIn} userData={userData} entry={entry} allowEdit={isUserData} editEntry={editEntry} key={entry.id} deleteEntry={deleteEntry}/>)}
+                        : data.map((entry) => <TabbedView isLoggedIn={isLoggedIn} setIsLoginModalOpen={setIsLoginModalOpen} userData={userData} setUserData={setUserData} entry={entry} allowEdit={isUserData} editEntry={editEntry} key={entry.id} deleteEntry={deleteEntry}/>)}
                 </div>
 
                 {/*SPACER TO KEEP EVERYTHING ELSE CENTERED*/}

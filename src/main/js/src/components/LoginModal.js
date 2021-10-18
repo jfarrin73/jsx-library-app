@@ -3,8 +3,7 @@ import { Fragment, useState } from 'react'
 import toast from "react-hot-toast";
 // import DataService from "../service/DataService";
 
-export default function LoginModal({handleLogin}) {
-    const [isOpen, setIsOpen] = useState(false);
+export default function LoginModal({handleLogin, isOpen, setIsOpen, setIsRegisterModalOpen}) {
     const [errorMessage, setErrorMessage] = useState("");
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
@@ -28,6 +27,11 @@ export default function LoginModal({handleLogin}) {
 
     function openModal() {
         setIsOpen(true)
+    }
+
+    function register(){
+        closeModal();
+        setIsRegisterModalOpen(true);
     }
 
     return (
@@ -81,7 +85,7 @@ export default function LoginModal({handleLogin}) {
                                 {errorMessage !== "" && <p className="text-red-500 text-sm text-left">{errorMessage}</p>}
                                 <form className="my-7" onSubmit={submitHandler}>
                                     <div className="flex relative ">
-                                        <span class="rounded-l-md inline-flex items-center px-3 bg-white dark:bg-gray-900 border-t border-l border-b border-gray-300 dark:border-gray-700 text-gray-500 shadow-sm text-sm">
+                                        <span className="rounded-l-md inline-flex items-center px-3 bg-white dark:bg-gray-900 border-t border-l border-b border-gray-300 dark:border-gray-700 text-gray-500 shadow-sm text-sm">
                                             <svg className="15" height="15" fill="currentColor" viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M1792 710v794q0 66-47 113t-113 47h-1472q-66 0-113-47t-47-113v-794q44 49 101 87 362 246 497 345 57 42 92.5 65.5t94.5 48 110 24.5h2q51 0 110-24.5t94.5-48 92.5-65.5q170-123 498-345 57-39 100-87zm0-294q0 79-49 151t-122 123q-376 261-468 325-10 7-42.5 30.5t-54 38-52 32.5-57.5 27-50 9h-2q-23 0-50-9t-57.5-27-52-32.5-54-38-42.5-30.5q-91-64-262-182.5t-205-142.5q-62-42-117-115.5t-55-136.5q0-78 41.5-130t118.5-52h1472q65 0 112.5 47t47.5 113z">
                                                 </path>
@@ -118,7 +122,7 @@ export default function LoginModal({handleLogin}) {
                                 </form>
 
                                 <a
-                                    onClick={_ => toast("Coming soon")}
+                                    onClick={_ => register()}
                                     className="text-gray-700 dark:text-gray-400 cursor-pointer text-sm font-light">Don't have an account, yet?</a>
                             </div>
                         </Transition.Child>

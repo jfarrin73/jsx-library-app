@@ -2,12 +2,13 @@ package com.jfarrin.reactuiapp.service.impl;
 
 import com.jfarrin.reactuiapp.constant.Role;
 import com.jfarrin.reactuiapp.model.User;
-import com.jfarrin.reactuiapp.model.UserData;
+import com.jfarrin.reactuiapp.dto.UserDataDto;
 import com.jfarrin.reactuiapp.model.UserPrincipal;
 import com.jfarrin.reactuiapp.exceptions.EmailExistException;
 import com.jfarrin.reactuiapp.exceptions.EmailNotFoundException;
 import com.jfarrin.reactuiapp.exceptions.UserNotFoundException;
 import com.jfarrin.reactuiapp.exceptions.UsernameExistException;
+import com.jfarrin.reactuiapp.repository.EntryRepository;
 import com.jfarrin.reactuiapp.repository.UserRepository;
 import com.jfarrin.reactuiapp.service.LoginAttemptService;
 import com.jfarrin.reactuiapp.service.UserService;
@@ -41,10 +42,10 @@ public class UserServiceImplementation implements UserService, UserDetailsServic
     private final Logger LOGGER = LoggerFactory.getLogger(getClass());
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder encoder;
-    private LoginAttemptService loginAttemptService;
+    private final LoginAttemptService loginAttemptService;
 
     @Autowired
-    public UserServiceImplementation(UserRepository userRepository, BCryptPasswordEncoder encoder,LoginAttemptService loginAttemptService) {
+    public UserServiceImplementation(UserRepository userRepository, BCryptPasswordEncoder encoder, LoginAttemptService loginAttemptService) {
         this.userRepository = userRepository;
         this.encoder = encoder;
         this.loginAttemptService = loginAttemptService;
@@ -135,10 +136,11 @@ public class UserServiceImplementation implements UserService, UserDetailsServic
         return currentUser;
     }
 
-    public void updateUserData(UserData userData) {
+    public void updateUserData(UserDataDto userData) {
         User currentUser = this.userRepository.findUserByUsername(userData.getUsername());
-        currentUser.setFavoriteIds(userData.getFavoriteIds());
-        currentUser.setLikesDislikes(userData.getLikeDislikes());
+//        currentUser (userData.getLikes());
+//        currentUser.setDislikes(userData.getDislikes());
+        currentUser.setFavorites(userData.getFavorites());
         this.userRepository.save(currentUser);
     }
 

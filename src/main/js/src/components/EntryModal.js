@@ -3,7 +3,7 @@ import {Dialog, Transition} from '@headlessui/react'
 import {Fragment, useState} from 'react'
 import JsxRenderer from "./JsxRenderer";
 import Picker from "./Picker";
-import {HiCheck, HiSelector} from "react-icons/hi";
+// import {HiCheck, HiSelector} from "react-icons/hi";
 
 const categories = [
     {name: 'Element'},
